@@ -299,29 +299,12 @@
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <script>
     const params = new URLSearchParams(location.search);
-    const rawCsv = params.get("csv") || "output/meatmap.csv";
-    // CSV候補URL（ページ相対とPages配信パス、rawを試す）
-    const origin = window.location.origin;
-    const repoPath = "/meat_map/";
-    const defaultBranch = "make-a-big-promise";
-    const candidateUrls = [];
-    const addUrl = (u) => {
-      if (!u) return;
-      try {
-        const full = new URL(u, window.location.href).toString();
-        if (!candidateUrls.includes(full)) candidateUrls.push(full);
-      } catch (e) {
-        // ignore
-      }
-    };
-    if (/^https?:\/\//i.test(rawCsv)) {
-      addUrl(rawCsv);
-    } else {
-      addUrl(new URL(rawCsv, window.location.href).toString()); // page relative
-      addUrl(`${origin}${repoPath}${rawCsv.replace(/^\//, "")}`); // Pages absolute
+    const rawCsv = params.get("csv") || "/output/meatmap.csv";
+    // 解釈ルール: 絶対URL/ルート始まりはそのまま。相対パスはルートに付ける。
+    let csvUrl = rawCsv;
+    if (!/^https?:\/\//i.test(rawCsv) && !rawCsv.startsWith("/")) {
+      csvUrl = `/${rawCsv.replace(/^\.?\//, "")}`;
     }
-    addUrl(`https://raw.githubusercontent.com/GenkiShimura2000/meat_map/${defaultBranch}/${rawCsv.replace(/^\//, "")}`);
-    const csvUrl = candidateUrls[0];
     const rankColors = { S: "#e11d48", A: "#f97316", B: "#0ea5e9", C: "#94a3b8" };
     const map = L.map("map", { center: [35.681236, 139.767125], zoom: 11, preferCanvas: true });
     const tileLayers = {
@@ -334,8 +317,7 @@
         maxZoom: 19,
       }),
     };
-    tileLayers.dark.addTo(map);
-    themeSelect.value = "dark";
+    tileLayers.light.addTo(map);
     const cluster = L.markerClusterGroup({ chunkedLoading: true, spiderfyOnMaxZoom: true });
     map.addLayer(cluster);
     const markers = [];
@@ -435,19 +417,21 @@
       rankTotals = { S: 0, A: 0, B: 0, C: 0 };
       genres.clear();
       try {
-        const urlsToTry = candidateUrls.length ? candidateUrls : [csvUrl];
-        let text = null;
-        for (const url of urlsToTry) {
-          try {
-            const res = await fetch(url);
-            if (!res.ok) continue;
-            text = await res.text();
-            break;
-          } catch (e) {
-            continue;
-          }
+        const candidateUrls = [];
+        if (/^https?:\/\//i.test(csvUrl)) {
+          candidateUrls.push(csvUrl);
+        } else {
+          candidateUrls.push(csvUrl); // 例: /output/...
+          candidateUrls.push(csvUrl.replace(/^\//, "./")); // 例: output/...
         }
-        if (!text) throw new Error(`CSV fetch failed: ${urlsToTry.join(", ")}`);
+        let text = null;
+        for (const url of candidateUrls) {
+          const res = await fetch(url);
+          if (!res.ok) continue;
+          text = await res.text();
+          break;
+        }
+        if (!text) throw new Error("CSV fetch failed");
         const meta = {};
         text.split(/\r?\n/).forEach(line => {
           if (line.startsWith("#")) {
@@ -496,10 +480,6 @@
       } catch (err) {
         showToast("CSV 読み込みに失敗しました");
         console.error("CSV fetch/parse error", err);
-        updatedLabel.textContent = "load error";
-        countLabel.textContent = "0 / 0";
-        legend.innerHTML = `<div class="legend-title">ロード失敗</div><div class="legend-row"><span class="legend-count">${err}</span></div>`;
-        drawerList.innerHTML = `<div class="list-item">CSV 取得失敗: ${err}</div>`;
       }
     }
 
