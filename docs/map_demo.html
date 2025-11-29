@@ -417,9 +417,21 @@
       rankTotals = { S: 0, A: 0, B: 0, C: 0 };
       genres.clear();
       try {
-        const res = await fetch(csvUrl);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const text = await res.text();
+        const candidateUrls = [];
+        if (/^https?:\/\//i.test(csvUrl)) {
+          candidateUrls.push(csvUrl);
+        } else {
+          candidateUrls.push(csvUrl); // 例: /output/...
+          candidateUrls.push(csvUrl.replace(/^\//, "./")); // 例: output/...
+        }
+        let text = null;
+        for (const url of candidateUrls) {
+          const res = await fetch(url);
+          if (!res.ok) continue;
+          text = await res.text();
+          break;
+        }
+        if (!text) throw new Error("CSV fetch failed");
         const meta = {};
         text.split(/\r?\n/).forEach(line => {
           if (line.startsWith("#")) {
