@@ -4,6 +4,7 @@ Client for the HotPepper Gourmet API.
 from __future__ import annotations
 
 import os
+import time
 from typing import Dict, List, Optional, Sequence
 
 import requests
@@ -70,23 +71,35 @@ class HotPepperClient:
             "format": "json",
             **params,
         }
-        response = self.session.get(self.BASE_URL, params=merged_params, timeout=30)
-        response.raise_for_status()
-        try:
-            payload = response.json()
-        except ValueError as exc:
-            snippet = response.text[:400]
-            raise RuntimeError(
-                f"HotPepper API returned invalid JSON (status={response.status_code}): {exc}; snippet={snippet!r}"
-            ) from exc
-        results = payload.get("results")
-        if not results:
-            raise RuntimeError("HotPepper API response missing 'results'")
-        errors = results.get("error")
-        if errors:
-            message = "; ".join(err.get("message", "Unknown error") for err in errors if isinstance(err, dict))
-            raise RuntimeError(f"HotPepper API error: {message}")
-        return results
+        last_exc: Optional[Exception] = None
+        for attempt in range(3):
+            try:
+                response = self.session.get(self.BASE_URL, params=merged_params, timeout=30)
+                response.raise_for_status()
+                try:
+                    payload = response.json()
+                except ValueError as exc:
+                    snippet = response.text[:400]
+                    raise RuntimeError(
+                        f"HotPepper API returned invalid JSON (status={response.status_code}): {exc}; snippet={snippet!r}"
+                    ) from exc
+                results = payload.get("results")
+                if not results:
+                    raise RuntimeError("HotPepper API response missing 'results'")
+                errors = results.get("error")
+                if errors:
+                    message = "; ".join(err.get("message", "Unknown error") for err in errors if isinstance(err, dict))
+                    raise RuntimeError(f"HotPepper API error: {message}")
+                return results
+            except Exception as exc:  # noqa: BLE001
+                last_exc = exc
+                if attempt < 2:
+                    time.sleep(2 * (attempt + 1))
+                else:
+                    raise
+        if last_exc:
+            raise last_exc
+        raise RuntimeError("HotPepper API request failed without exception")
 
     def _fetch_shops(
         self,

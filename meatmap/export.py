@@ -6,6 +6,7 @@ from __future__ import annotations
 import csv
 from pathlib import Path
 from typing import Iterable, List, Optional, Sequence
+from datetime import datetime, timezone
 
 from .models import StoreRecord
 
@@ -35,6 +36,10 @@ def export_to_csv(
     filtered = [record for record in records if not include_ranks or record.carnivore_rank in include_ranks]
     with output_path.open("w", newline="", encoding=encoding) as fh:
         writer = csv.DictWriter(fh, fieldnames=DEFAULT_FIELDS)
+        # メタ情報をコメント行として付与（Google My Maps はヘッダー以外を無視するので上部に置く）
+        timestamp = datetime.now(timezone.utc).isoformat()
+        fh.write(f"# generated_at_utc={timestamp}\n")
+        fh.write(f"# total_records={len(filtered)}\n")
         writer.writeheader()
         for record in filtered:
             writer.writerow(record_to_row(record))
