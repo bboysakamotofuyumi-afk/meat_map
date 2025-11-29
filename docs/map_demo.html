@@ -303,11 +303,30 @@
   <script>
     const params = new URLSearchParams(location.search);
     const rawCsv = params.get("csv") || "output/meatmap.csv";
-    // 解釈ルール: 絶対URLならそのまま、相対はページURLを基点に解決。
-    let csvUrl = rawCsv;
-    if (!/^https?:\/\//i.test(rawCsv)) {
-      csvUrl = new URL(rawCsv, window.location.href).toString();
+    // デフォルトは Pages 配信を想定した絶対パスを優先しつつ、複数フォールバックを試す。
+    const origin = window.location.origin;
+    const repoPath = "/meat_map/"; // Pages 配信パス
+    const defaultBranch = "make-a-big-promise";
+    const candidateUrls = [];
+    const addUrl = (u) => {
+      if (!u) return;
+      try {
+        const full = new URL(u, window.location.href).toString();
+        if (!candidateUrls.includes(full)) candidateUrls.push(full);
+      } catch (e) {
+        // 無効なURLは無視
+      }
+    };
+    if (/^https?:\/\//i.test(rawCsv)) {
+      addUrl(rawCsv);
+    } else {
+      addUrl(rawCsv);
+      addUrl(new URL(rawCsv, `${origin}${repoPath}`).toString());
+      addUrl(new URL(rawCsv, origin).toString());
     }
+    // raw.githubusercontent フォールバック
+    addUrl(`https://raw.githubusercontent.com/GenkiShimura2000/meat_map/${defaultBranch}/${rawCsv.replace(/^\\//, "")}`);
+    let csvUrl = candidateUrls[0] || rawCsv;
     const rankColors = { S: "#e11d48", A: "#f97316", B: "#0ea5e9", C: "#94a3b8" };
     const map = L.map("map", { center: [35.681236, 139.767125], zoom: 11, preferCanvas: true });
     const tileLayers = {
@@ -421,21 +440,11 @@
       rankTotals = { S: 0, A: 0, B: 0, C: 0 };
       genres.clear();
       try {
-        const candidateUrls = [];
-        const origin = window.location.origin;
-        const addUrl = (u) => {
-          if (!u) return;
-          if (!candidateUrls.includes(u)) candidateUrls.push(u);
-        };
-        addUrl(csvUrl);
-        if (!/^https?:\/\//i.test(rawCsv)) {
-          addUrl(new URL(rawCsv, `${origin}/meat_map/`).toString());
-          addUrl(new URL(rawCsv, origin).toString());
-        }
+        // すでに candidateUrls は上で組み立て済み
         let text = null;
         for (const url of candidateUrls) {
           try {
-            const res = await fetch(url);
+            const res = await fetch(url, { mode: "cors" });
             if (!res.ok) continue;
             text = await res.text();
             break;
