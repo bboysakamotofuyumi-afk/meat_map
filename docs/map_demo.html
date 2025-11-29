@@ -98,6 +98,16 @@
       box-shadow: 0 6px 20px rgba(249, 115, 22, 0.35);
     }
     .control-button:active { transform: translateY(1px); }
+    .select {
+      background: var(--panel);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text);
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 13px;
+      min-width: 160px;
+      outline: none;
+    }
     .drawer {
       position: fixed;
       left: 14px;
@@ -220,6 +230,10 @@
         </select>
         <button id="fit-button" class="control-button" type="button">表示範囲にズーム</button>
         <button id="geo-button" class="control-button" type="button">現在地へ</button>
+        <select id="theme-select" class="select">
+          <option value="light">タイル: Light</option>
+          <option value="dark">タイル: Dark</option>
+        </select>
       </div>
     </header>
     <div id="map"></div>
@@ -247,10 +261,17 @@
     }
     const rankColors = { S: "#e11d48", A: "#f97316", B: "#0ea5e9", C: "#94a3b8" };
     const map = L.map("map", { center: [35.681236, 139.767125], zoom: 11, preferCanvas: true });
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
-      attribution: "&copy; OpenStreetMap & CARTO",
-      maxZoom: 19,
-    }).addTo(map);
+    const tileLayers = {
+      light: L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+        attribution: "&copy; OpenStreetMap & CARTO",
+        maxZoom: 19,
+      }),
+      dark: L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+        attribution: "&copy; OpenStreetMap & CARTO",
+        maxZoom: 19,
+      }),
+    };
+    tileLayers.light.addTo(map);
     const cluster = L.markerClusterGroup({ chunkedLoading: true, spiderfyOnMaxZoom: true });
     map.addLayer(cluster);
     const markers = [];
@@ -266,6 +287,7 @@
     const genreSelect = document.getElementById("genre-select");
     const fitButton = document.getElementById("fit-button");
     const geoButton = document.getElementById("geo-button");
+    const themeSelect = document.getElementById("theme-select");
     const updatedLabel = document.getElementById("updated-label");
     csvLabel.textContent = csvUrl;
     let rankTotals = { S: 0, A: 0, B: 0, C: 0 };
@@ -430,12 +452,18 @@
           userCircle = L.circle([latitude, longitude], { radius: accuracy || 120, color: "#0ea5e9", fillOpacity: 0.1 });
           userMarker.addTo(map);
           userCircle.addTo(map);
-          map.setView([latitude, longitude], 15);
-          showToast("現在地を表示しました");
-        },
-        () => showToast("現在地の取得に失敗しました"),
-        { enableHighAccuracy: true, timeout: 10000 }
-      );
+        map.setView([latitude, longitude], 15);
+        showToast("現在地を表示しました");
+      },
+      () => showToast("現在地の取得に失敗しました"),
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  });
+    themeSelect.addEventListener("change", () => {
+      const theme = themeSelect.value || "light";
+      Object.values(tileLayers).forEach(layer => map.removeLayer(layer));
+      const layer = tileLayers[theme] || tileLayers.light;
+      layer.addTo(map);
     });
     loadCsv();
 
