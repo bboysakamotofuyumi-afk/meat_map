@@ -81,6 +81,46 @@
       font-size: 13px;
       box-shadow: 0 10px 40px rgba(0,0,0,0.35);
     }
+    .legend {
+      position: fixed;
+      right: 14px;
+      bottom: 14px;
+      background: rgba(15, 23, 42, 0.92);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 13px;
+      min-width: 180px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+    }
+    .legend-title {
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: var(--muted);
+    }
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 4px 0;
+    }
+    .legend-color {
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: inline-block;
+    }
+    .legend-label {
+      width: 16px;
+      font-weight: 700;
+      text-align: center;
+    }
+    .legend-count {
+      margin-left: auto;
+      color: var(--muted);
+    }
     a { color: var(--accent); }
   </style>
 </head>
@@ -100,6 +140,7 @@
     <div id="map"></div>
   </div>
   <div class="toast" id="toast">CSV を読み込み中…</div>
+  <div class="legend" id="legend"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
@@ -120,11 +161,14 @@
     }).addTo(map);
     const cluster = L.markerClusterGroup({ chunkedLoading: true, spiderfyOnMaxZoom: true });
     map.addLayer(cluster);
+    const markers = [];
 
     const toast = document.getElementById("toast");
     const csvLabel = document.getElementById("csv-label");
     const countLabel = document.getElementById("count-label");
+    const legend = document.getElementById("legend");
     csvLabel.textContent = csvUrl;
+    let rankTotals = { S: 0, A: 0, B: 0, C: 0 };
 
     function showToast(msg) {
       toast.textContent = msg;
@@ -159,21 +203,25 @@
       const allowed = Array.from(document.querySelectorAll('input[data-rank]'))
         .filter(cb => cb.checked)
         .map(cb => cb.getAttribute("data-rank"));
-      cluster.eachLayer(layer => {
-        const rank = layer.options.rank || "C";
+      cluster.clearLayers();
+      const visibleByRank = { S: 0, A: 0, B: 0, C: 0 };
+      let visible = 0;
+      markers.forEach(marker => {
+        const rank = marker.rank || "C";
         if (allowed.includes(rank)) {
-          layer.addTo(cluster);
-        } else {
-          cluster.removeLayer(layer);
+          cluster.addLayer(marker);
+          visibleByRank[rank] = (visibleByRank[rank] || 0) + 1;
+          visible += 1;
         }
       });
-      const visible = cluster.getLayers().length;
-      countLabel.textContent = visible;
+      countLabel.textContent = `${visible} / ${markers.length}`;
+      renderLegend(visibleByRank);
       showToast(`表示中 ${visible} 件 / ランク: ${allowed.join(", ")}`);
     }
 
     function loadCsv() {
       showToast("CSV を読み込み中…");
+      rankTotals = { S: 0, A: 0, B: 0, C: 0 };
       Papa.parse(csvUrl, {
         download: true,
         header: true,
@@ -181,6 +229,7 @@
         skipEmptyLines: true,
         complete: (result) => {
           cluster.clearLayers();
+          markers.length = 0;
           const rows = result.data || [];
           let added = 0;
           rows.forEach(row => {
@@ -188,12 +237,14 @@
             const lng = parseFloat(row.lng);
             if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
             const rank = row.carnivore_rank || "C";
+            rankTotals[rank] = (rankTotals[rank] || 0) + 1;
             const marker = L.marker([lat, lng], { icon: iconForRank(rank), rank });
             marker.bindPopup(createPopup(row));
-            cluster.addLayer(marker);
+            markers.push(marker);
             added += 1;
           });
-          countLabel.textContent = added;
+          countLabel.textContent = `${added} / ${markers.length}`;
+          renderLegend(rankTotals);
           showToast(`読み込み完了: ${added} 件`);
           applyFilter();
         },
@@ -206,6 +257,20 @@
 
     document.querySelectorAll('input[data-rank]').forEach(cb => cb.addEventListener("change", applyFilter));
     loadCsv();
+
+    function renderLegend(counts) {
+      const ranks = ["S", "A", "B", "C"];
+      const lines = ranks.map(rank => {
+        const total = rankTotals[rank] || 0;
+        const visible = counts ? counts[rank] || 0 : total;
+        return `<div class="legend-row">
+          <span class="legend-color" style="background:${rankColors[rank] || "#94a3b8"}"></span>
+          <span class="legend-label">${rank}</span>
+          <span class="legend-count">${visible} / ${total}</span>
+        </div>`;
+      });
+      legend.innerHTML = `<div class="legend-title">ランク別 件数 (表示/総数)</div>${lines.join("")}`;
+    }
   </script>
 </body>
 </html>
