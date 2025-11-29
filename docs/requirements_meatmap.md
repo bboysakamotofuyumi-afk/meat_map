@@ -10,6 +10,7 @@
 - コマンド例: `python -m meatmap.cli --output output/meatmap.csv`
 - ランクフィルタ: デフォルトは S/A のみを出力。`--include-rank-b` や `--include-rank-c` で範囲を広げられる。
 - マップデモ: `python -m http.server 8000` などでルートをホストし、`http://localhost:8000/docs/map_demo.html?csv=/output/meatmap.csv` を開くと CSV を地図表示できる（クエリを省略すると `/output/meatmap.csv` を読む）。
+- GitHub Pages 用コピー: `--copy-to-docs` を付けて実行すると `docs/output/meatmap.csv` にもコピーされる（Pagesでそのまま参照可能）。
 
 ## スコア閾値（ルールベース）
 

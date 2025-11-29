@@ -12,9 +12,11 @@ from dotenv import load_dotenv
 from . import export, merge, scoring
 from .models import RawStoreRecord
 from .sources import HotPepperClient
+from shutil import copy2
 
 # デフォルトでは S/A のみをエクスポートする。
 DEFAULT_EXPORT_RANKS = ("S", "A")
+DOCS_OUTPUT_PATH = Path("docs/output/meatmap.csv")
 
 
 def load_environment() -> None:
@@ -34,11 +36,17 @@ def load_environment() -> None:
 @click.option("--skip-hotpepper", is_flag=True, help="Skip querying HotPepper.")
 @click.option("--include-rank-b", is_flag=True, help="Include rank B stores in the export.")
 @click.option("--include-rank-c", is_flag=True, help="Include rank C stores in the export.")
+@click.option(
+    "--copy-to-docs",
+    is_flag=True,
+    help="Also copy the exported CSV to docs/output/meatmap.csv (useful for GitHub Pages).",
+)
 def main(
     output: str,
     skip_hotpepper: bool,
     include_rank_b: bool,
     include_rank_c: bool,
+    copy_to_docs: bool,
 ) -> None:
     """
     Run the ingest -> merge -> score -> export pipeline.
@@ -71,6 +79,10 @@ def main(
         f"Exported {exported_count} stores to {output_path} "
         f"(total scored: {len(scored_records)}, included ranks: {', '.join(include_ranks)})"
     )
+    if copy_to_docs:
+        DOCS_OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+        copy2(output_path, DOCS_OUTPUT_PATH)
+        click.echo(f"Copied CSV to {DOCS_OUTPUT_PATH} for map demo/Pages")
 
 
 if __name__ == "__main__":
