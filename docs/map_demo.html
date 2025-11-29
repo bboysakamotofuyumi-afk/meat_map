@@ -314,7 +314,8 @@
         maxZoom: 19,
       }),
     };
-    tileLayers.light.addTo(map);
+    tileLayers.dark.addTo(map);
+    themeSelect.value = "dark";
     const cluster = L.markerClusterGroup({ chunkedLoading: true, spiderfyOnMaxZoom: true });
     map.addLayer(cluster);
     const markers = [];
