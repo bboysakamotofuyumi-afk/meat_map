@@ -443,7 +443,7 @@
             continue;
           }
         }
-        if (!text) throw new Error("CSV fetch failed");
+        if (!text) throw new Error(`CSV fetch failed: tried ${candidateUrls.join(", ")}`);
         const meta = {};
         text.split(/\r?\n/).forEach(line => {
           if (line.startsWith("#")) {
@@ -492,6 +492,9 @@
       } catch (err) {
         showToast("CSV 読み込みに失敗しました");
         console.error("CSV fetch/parse error", err);
+        updatedLabel.textContent = "load error";
+        countLabel.textContent = "0 / 0";
+        drawerList.innerHTML = `<div class="list-item">CSV 取得失敗: ${err}</div>`;
       }
     }
 
