@@ -207,7 +207,7 @@
       const visibleByRank = { S: 0, A: 0, B: 0, C: 0 };
       let visible = 0;
       markers.forEach(marker => {
-        const rank = marker.rank || "C";
+        const rank = marker.rank || marker.options.rank || "C";
         if (allowed.includes(rank)) {
           cluster.addLayer(marker);
           visibleByRank[rank] = (visibleByRank[rank] || 0) + 1;
@@ -239,6 +239,7 @@
             const rank = row.carnivore_rank || "C";
             rankTotals[rank] = (rankTotals[rank] || 0) + 1;
             const marker = L.marker([lat, lng], { icon: iconForRank(rank), rank });
+            marker.rank = rank; // keep rank on instance for filtering/legend
             marker.bindPopup(createPopup(row));
             markers.push(marker);
             added += 1;
