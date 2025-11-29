@@ -300,27 +300,8 @@
   <script>
     const params = new URLSearchParams(location.search);
     const rawCsv = params.get("csv") || "output/meatmap.csv";
-    const origin = window.location.origin;
-    const repoPath = "/meat_map/";
-    const defaultBranch = "make-a-big-promise";
-    const candidateUrls = [];
-    const addUrl = (u) => {
-      if (!u) return;
-      try {
-        const full = new URL(u, window.location.href).toString();
-        if (!candidateUrls.includes(full)) candidateUrls.push(full);
-      } catch (e) {
-        // ignore invalid
-      }
-    };
-    if (/^https?:\/\//i.test(rawCsv)) {
-      addUrl(rawCsv);
-    } else {
-      addUrl(rawCsv); // 相対 -> /<repo>/output/meatmap.csv
-      addUrl(`${origin}${repoPath}${rawCsv.replace(/^\//, "")}`); // 明示的に /meat_map/ 配下
-    }
-    addUrl(`https://raw.githubusercontent.com/GenkiShimura2000/meat_map/${defaultBranch}/${rawCsv.replace(/^\//, "")}`);
-    const csvUrl = candidateUrls[0] || rawCsv;
+    // ページ相対で解決（/meat_map/配下でも動く）
+    const csvUrl = new URL(rawCsv, window.location.href).toString();
     const rankColors = { S: "#e11d48", A: "#f97316", B: "#0ea5e9", C: "#94a3b8" };
     const map = L.map("map", { center: [35.681236, 139.767125], zoom: 11, preferCanvas: true });
     const tileLayers = {
@@ -433,9 +414,9 @@
       rankTotals = { S: 0, A: 0, B: 0, C: 0 };
       genres.clear();
       try {
-        const urlsToTry = candidateUrls.length ? candidateUrls : [csvUrl];
+        const candidateUrls = [csvUrl];
         let text = null;
-        for (const url of urlsToTry) {
+        for (const url of candidateUrls) {
           try {
             const res = await fetch(url);
             if (!res.ok) continue;
@@ -445,7 +426,7 @@
             continue;
           }
         }
-        if (!text) throw new Error(`CSV fetch failed: tried ${urlsToTry.join(", ")}`);
+        if (!text) throw new Error(`CSV fetch failed: ${candidateUrls.join(", ")}`);
         const meta = {};
         text.split(/\r?\n/).forEach(line => {
           if (line.startsWith("#")) {
