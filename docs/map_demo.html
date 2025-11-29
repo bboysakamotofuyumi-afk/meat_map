@@ -421,13 +421,27 @@
       rankTotals = { S: 0, A: 0, B: 0, C: 0 };
       genres.clear();
       try {
-        const candidateUrls = [csvUrl];
+        const candidateUrls = [];
+        const origin = window.location.origin;
+        const addUrl = (u) => {
+          if (!u) return;
+          if (!candidateUrls.includes(u)) candidateUrls.push(u);
+        };
+        addUrl(csvUrl);
+        if (!/^https?:\/\//i.test(rawCsv)) {
+          addUrl(new URL(rawCsv, `${origin}/meat_map/`).toString());
+          addUrl(new URL(rawCsv, origin).toString());
+        }
         let text = null;
         for (const url of candidateUrls) {
-          const res = await fetch(url);
-          if (!res.ok) continue;
-          text = await res.text();
-          break;
+          try {
+            const res = await fetch(url);
+            if (!res.ok) continue;
+            text = await res.text();
+            break;
+          } catch (e) {
+            continue;
+          }
         }
         if (!text) throw new Error("CSV fetch failed");
         const meta = {};
