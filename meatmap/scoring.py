@@ -7,6 +7,12 @@ from typing import Iterable, List, Sequence, Tuple
 
 from .models import StoreRecord
 
+# スコア閾値はここで一元管理する（CLI などもこの基準でフィルタする前提）。
+S_THRESHOLD = 80.0
+A_THRESHOLD = 60.0
+B_THRESHOLD = 45.0
+MAX_SCORE = 100.0
+
 GENRE_WEIGHTS: Sequence[Tuple[str, int]] = [
     ("焼肉", 35),
     ("ホルモン", 32),
@@ -85,15 +91,15 @@ def compute_score(record: StoreRecord) -> float:
         score += (record.rating - 3.0) * 8
     if record.review_count:
         score += min(record.review_count, 500) * 0.05
-    return min(score, 100.0)
+    return min(score, MAX_SCORE)
 
 
 def rank_score(score: float) -> str:
-    if score >= 80:
+    if score >= S_THRESHOLD:
         return "S"
-    if score >= 60:
+    if score >= A_THRESHOLD:
         return "A"
-    if score >= 45:
+    if score >= B_THRESHOLD:
         return "B"
     return "C"
 

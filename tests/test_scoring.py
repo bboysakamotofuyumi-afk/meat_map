@@ -34,10 +34,10 @@ def test_score_store_assigns_rank():
 
 
 def test_rank_score_thresholds():
-    assert scoring.rank_score(85) == "S"
-    assert scoring.rank_score(65) == "A"
-    assert scoring.rank_score(50) == "B"
-    assert scoring.rank_score(30) == "C"
+    assert scoring.rank_score(scoring.S_THRESHOLD) == "S"
+    assert scoring.rank_score(scoring.A_THRESHOLD) == "A"
+    assert scoring.rank_score(scoring.B_THRESHOLD) == "B"
+    assert scoring.rank_score(scoring.B_THRESHOLD - 1) == "C"
 
 
 def test_keyword_scoring_boosts_yakitori():

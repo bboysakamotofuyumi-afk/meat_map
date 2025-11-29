@@ -13,6 +13,9 @@ from . import export, merge, scoring
 from .models import RawStoreRecord
 from .sources import HotPepperClient
 
+# デフォルトでは S/A のみをエクスポートする。
+DEFAULT_EXPORT_RANKS = ("S", "A")
+
 
 def load_environment() -> None:
     cwd_env = Path(".env")
@@ -57,13 +60,17 @@ def main(
         raise click.ClickException("No records collected. Enable at least one data source.")
     merged_records = merge.merge_records(raw_records)
     scored_records = scoring.score_records(merged_records)
-    include_ranks = ["S", "A"]
+    include_ranks = list(DEFAULT_EXPORT_RANKS)
     if include_rank_b:
         include_ranks.append("B")
     if include_rank_c:
         include_ranks.append("C")
     output_path = export.export_to_csv(scored_records, Path(output), include_ranks=include_ranks)
-    click.echo(f"Exported {output_path} with {len(scored_records)} stores (before filtering).")
+    exported_count = sum(1 for record in scored_records if record.carnivore_rank in include_ranks)
+    click.echo(
+        f"Exported {exported_count} stores to {output_path} "
+        f"(total scored: {len(scored_records)}, included ranks: {', '.join(include_ranks)})"
+    )
 
 
 if __name__ == "__main__":
