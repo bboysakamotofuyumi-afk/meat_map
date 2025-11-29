@@ -286,6 +286,12 @@
       const url = row.url ? `<div style="margin-top:6px;"><a href="${row.url}" target="_blank" rel="noopener">公式/詳細</a></div>` : "";
       const rankBadge = `<span class="rank-badge" style="background:${rankColors[row.carnivore_rank] || "#cbd5e1"}">${row.carnivore_rank || "-"}</span>`;
       const genres = row.genre ? `<div style="color:#cbd5e1; margin-top:4px;">${row.genre}</div>` : "";
+      const reviewBadge = row.review_count
+        ? `<span style="display:inline-block; background:rgba(255,255,255,0.08); color:#cbd5e1; padding:4px 8px; border-radius:8px; font-size:12px;">${rating || "未評価"}</span>`
+        : "";
+      const urlButton = row.url
+        ? `<a href="${row.url}" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; gap:6px; padding:8px 10px; background:${rankColors[row.carnivore_rank] || "#f97316"}; color:#0f172a; border-radius:8px; text-decoration:none; font-weight:700;">店舗ページ</a>`
+        : "";
       return `
         <div style="min-width: 180px;">
           <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
@@ -295,9 +301,9 @@
           <div style="color:#cbd5e1;">${row.address || "住所不明"}</div>
           <div style="margin-top:4px;">スコア: ${row.carnivore_score ?? "-"} / ランク: <strong>${row.carnivore_rank || "-"}</strong></div>
           ${genres}
-          <div style="color:#cbd5e1;">${rating}</div>
+          <div style="margin-top:4px; display:flex; gap:6px; align-items:center;">${reviewBadge}</div>
           ${notes}
-          ${url}
+          <div style="margin-top:8px;">${urlButton}</div>
         </div>
       `;
     }
