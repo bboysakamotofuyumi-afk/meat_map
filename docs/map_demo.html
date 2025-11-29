@@ -206,6 +206,7 @@
       <div class="title">Tokyo Carnivore Meat Map (Leaflet Demo)</div>
       <div class="chip">CSV: <strong id="csv-label">loading…</strong></div>
       <div class="chip">Markers: <strong id="count-label">0</strong></div>
+      <div class="chip">Updated: <strong id="updated-label">-</strong></div>
       <div class="controls">
         <label class="control"><input type="checkbox" data-rank="S" checked>S</label>
         <label class="control"><input type="checkbox" data-rank="A" checked>A</label>
@@ -218,6 +219,7 @@
           <option value="">ジャンル: すべて</option>
         </select>
         <button id="fit-button" class="control-button" type="button">表示範囲にズーム</button>
+        <button id="geo-button" class="control-button" type="button">現在地へ</button>
       </div>
     </header>
     <div id="map"></div>
@@ -263,10 +265,14 @@
     const searchBox = document.getElementById("search-box");
     const genreSelect = document.getElementById("genre-select");
     const fitButton = document.getElementById("fit-button");
+    const geoButton = document.getElementById("geo-button");
+    const updatedLabel = document.getElementById("updated-label");
     csvLabel.textContent = csvUrl;
     let rankTotals = { S: 0, A: 0, B: 0, C: 0 };
     let searchTerm = "";
     let selectedGenre = "";
+    let userMarker = null;
+    let userCircle = null;
 
     function showToast(msg) {
       toast.textContent = msg;
@@ -333,50 +339,63 @@
       showToast(`表示中 ${visible} 件 / ランク: ${allowed.join(", ")}`);
     }
 
-    function loadCsv() {
+    async function loadCsv() {
       showToast("CSV を読み込み中…");
       rankTotals = { S: 0, A: 0, B: 0, C: 0 };
       genres.clear();
-      Papa.parse(csvUrl, {
-        download: true,
-        header: true,
-        dynamicTyping: true,
-        skipEmptyLines: true,
-        complete: (result) => {
-          cluster.clearLayers();
-          markers.length = 0;
-          const rows = result.data || [];
-          let added = 0;
-          rows.forEach(row => {
-            const lat = parseFloat(row.lat);
-            const lng = parseFloat(row.lng);
-            if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
-            const rank = row.carnivore_rank || "C";
-            rankTotals[rank] = (rankTotals[rank] || 0) + 1;
-            const genreText = (row.genre || "").trim();
-            genreText.split(",").map(g => g.trim()).filter(Boolean).forEach(g => genres.add(g));
-            const marker = L.marker([lat, lng], { icon: iconForRank(rank), rank });
-            marker.rank = rank; // keep rank on instance for filtering/legend
-            marker.meta = {
-              name: row.name || "",
-              address: row.address || "",
-              genreText,
-            };
-            marker.bindPopup(createPopup(row));
-            markers.push(marker);
-            added += 1;
-          });
-          countLabel.textContent = `${added} / ${markers.length}`;
-          populateGenreOptions();
-          renderLegend(rankTotals);
-          showToast(`読み込み完了: ${added} 件`);
-          applyFilter();
-        },
-        error: (err) => {
-          showToast("CSV 読み込みに失敗しました");
-          console.error("CSV parse error", err);
+      try {
+        const res = await fetch(csvUrl);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const text = await res.text();
+        const meta = {};
+        text.split(/\r?\n/).forEach(line => {
+          if (line.startsWith("#")) {
+            const kv = line.replace(/^#\s*/, "");
+            const [k, v] = kv.split("=", 2);
+            if (k && v !== undefined) meta[k.trim()] = v.trim();
+          }
+        });
+        if (meta.generated_at_utc) {
+          updatedLabel.textContent = meta.generated_at_utc;
         }
-      });
+        const result = Papa.parse(text, {
+          header: true,
+          dynamicTyping: true,
+          skipEmptyLines: true,
+          comments: "#",
+        });
+        cluster.clearLayers();
+        markers.length = 0;
+        const rows = result.data || [];
+        let added = 0;
+        rows.forEach(row => {
+          const lat = parseFloat(row.lat);
+          const lng = parseFloat(row.lng);
+          if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+          const rank = row.carnivore_rank || "C";
+          rankTotals[rank] = (rankTotals[rank] || 0) + 1;
+          const genreText = (row.genre || "").trim();
+          genreText.split(",").map(g => g.trim()).filter(Boolean).forEach(g => genres.add(g));
+          const marker = L.marker([lat, lng], { icon: iconForRank(rank), rank });
+          marker.rank = rank; // keep rank on instance for filtering/legend
+          marker.meta = {
+            name: row.name || "",
+            address: row.address || "",
+            genreText,
+          };
+          marker.bindPopup(createPopup(row));
+          markers.push(marker);
+          added += 1;
+        });
+        countLabel.textContent = `${added} / ${markers.length}`;
+        populateGenreOptions();
+        renderLegend(rankTotals);
+        showToast(`読み込み完了: ${added} 件`);
+        applyFilter();
+      } catch (err) {
+        showToast("CSV 読み込みに失敗しました");
+        console.error("CSV fetch/parse error", err);
+      }
     }
 
     document.querySelectorAll('input[data-rank]').forEach(cb => cb.addEventListener("change", applyFilter));
@@ -392,6 +411,31 @@
       if (cluster.getLayers().length > 0) {
         map.fitBounds(cluster.getBounds(), { padding: [24, 24] });
       }
+    });
+    geoButton.addEventListener("click", () => {
+      if (!navigator.geolocation) {
+        showToast("位置情報に対応していません");
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude, longitude, accuracy } = pos.coords;
+          if (userMarker) {
+            map.removeLayer(userMarker);
+          }
+          if (userCircle) {
+            map.removeLayer(userCircle);
+          }
+          userMarker = L.marker([latitude, longitude], { icon: iconForRank("C") });
+          userCircle = L.circle([latitude, longitude], { radius: accuracy || 120, color: "#0ea5e9", fillOpacity: 0.1 });
+          userMarker.addTo(map);
+          userCircle.addTo(map);
+          map.setView([latitude, longitude], 15);
+          showToast("現在地を表示しました");
+        },
+        () => showToast("現在地の取得に失敗しました"),
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
     });
     loadCsv();
 
