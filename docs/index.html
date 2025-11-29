@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tokyo Carnivore Meat Map</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: rgba(255, 255, 255, 0.08);
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #f97316;
+    }
+    * { box-sizing: border-box; }
+    body, html { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: "Inter","Noto Sans JP",sans-serif; }
+    .hero {
+      padding: 40px 18px;
+      background: radial-gradient(circle at 20% 20%, rgba(249, 115, 22, 0.08), transparent 35%),
+                  radial-gradient(circle at 80% 0%, rgba(14, 165, 233, 0.1), transparent 30%),
+                  var(--bg);
+    }
+    .container { max-width: 1100px; margin: 0 auto; }
+    h1 { margin: 0 0 12px; font-size: 28px; }
+    p { margin: 0 0 12px; color: var(--muted); line-height: 1.6; }
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(240px,1fr)); gap: 12px; margin-top: 16px; }
+    .card {
+      background: var(--panel);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 14px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-weight: 700;
+      color: #0f172a;
+      background: var(--accent);
+      box-shadow: 0 10px 30px rgba(249,115,22,0.35);
+    }
+    .pill { display: inline-block; padding: 4px 8px; border-radius: 999px; background: rgba(255,255,255,0.08); color: var(--muted); font-size: 12px; }
+    ul { padding-left: 18px; color: var(--muted); line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <div class="hero">
+    <div class="container">
+      <p class="pill">Tokyo Carnivore Meat Map</p>
+      <h1>都内の“肉に本気”なお店をマッピング</h1>
+      <p>ホットペッパーから取得した焼肉・ステーキ等の肉系店舗をスコアリングし、S/Aランクを中心に地図表示。毎回の取得結果はCSVに出力され、GitHub Pagesで確認できます。</p>
+      <a class="btn" href="./map_demo.html?csv=output/meatmap.csv">マップを開く</a>
+    </div>
+  </div>
+  <div class="container" style="padding: 18px;">
+    <div class="card-grid">
+      <div class="card">
+        <h3>使い方</h3>
+        <ul>
+          <li>上の「マップを開く」をクリック</li>
+          <li>ランク・ジャンル・検索で絞り込み</li>
+          <li>リストから店舗を選んでズーム</li>
+          <li>現在地ボタンで自分の近くを確認</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>データ更新</h3>
+        <ul>
+          <li>スクリプト: <code>python -m meatmap.cli --copy-to-docs</code></li>
+          <li>データソース: ホットペッパー（東京、肉系ジャンル＋キーワード）</li>
+          <li>CSV先頭に生成日時・件数をメタ行で付与</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>注意・免責</h3>
+        <ul>
+          <li>情報の正確性は保証しません</li>
+          <li>広告・寄付等は未設定（必要に応じて追加）</li>
+          <li>APIキーは公開しないでください</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
