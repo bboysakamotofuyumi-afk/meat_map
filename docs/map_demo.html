@@ -153,6 +153,25 @@
       font-weight: 700;
       margin-top: 6px;
     }
+    .search-bar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      width: 100%;
+      max-width: 360px;
+      background: var(--panel);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 6px 8px;
+    }
+    .search-bar input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      padding: 6px 8px;
+      outline: none;
+    }
     #map { width: 100%; height: 100%; }
     .toast {
       position: fixed;
@@ -207,6 +226,25 @@
       margin-left: auto;
       color: var(--muted);
     }
+    .search-bar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      width: 100%;
+      max-width: 360px;
+      background: var(--panel);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 6px 8px;
+    }
+    .search-bar input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      padding: 6px 8px;
+      outline: none;
+    }
     a { color: var(--accent); }
   </style>
 </head>
@@ -228,12 +266,20 @@
         <select id="genre-select" class="control-select">
           <option value="">ジャンル: すべて</option>
         </select>
+        <select id="sort-select" class="select">
+          <option value="rank">並び: ランク優先</option>
+          <option value="name">並び: 名前順</option>
+        </select>
         <button id="fit-button" class="control-button" type="button">表示範囲にズーム</button>
         <button id="geo-button" class="control-button" type="button">現在地へ</button>
         <select id="theme-select" class="select">
           <option value="light">タイル: Light</option>
           <option value="dark">タイル: Dark</option>
         </select>
+      </div>
+      <div class="search-bar">
+        <input id="geocode-input" type="search" placeholder="住所で移動（例: 渋谷駅）">
+        <button id="geocode-button" class="control-button" type="button">住所検索</button>
       </div>
     </header>
     <div id="map"></div>
@@ -287,14 +333,19 @@
     const genreSelect = document.getElementById("genre-select");
     const fitButton = document.getElementById("fit-button");
     const geoButton = document.getElementById("geo-button");
+    const geocodeInput = document.getElementById("geocode-input");
+    const geocodeButton = document.getElementById("geocode-button");
     const themeSelect = document.getElementById("theme-select");
+    const sortSelect = document.getElementById("sort-select");
     const updatedLabel = document.getElementById("updated-label");
     csvLabel.textContent = csvUrl;
     let rankTotals = { S: 0, A: 0, B: 0, C: 0 };
     let searchTerm = "";
     let selectedGenre = "";
+    let sortMode = "rank";
     let userMarker = null;
     let userCircle = null;
+    let geocodeMarker = null;
 
     function showToast(msg) {
       toast.textContent = msg;
@@ -434,6 +485,43 @@
         map.fitBounds(cluster.getBounds(), { padding: [24, 24] });
       }
     });
+    geocodeButton.addEventListener("click", async () => {
+      const q = geocodeInput.value.trim();
+      if (!q) {
+        showToast("住所を入力してください");
+        return;
+      }
+      showToast("住所を検索中…");
+      try {
+        const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=jp&q=${encodeURIComponent(q)}`;
+        const res = await fetch(url, { headers: { "Accept-Language": "ja" } });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const hits = await res.json();
+        if (!hits || !hits.length) {
+          showToast("見つかりませんでした");
+          return;
+        }
+        const hit = hits[0];
+        const lat = parseFloat(hit.lat);
+        const lon = parseFloat(hit.lon);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+          showToast("座標が不正です");
+          return;
+        }
+        if (geocodeMarker) map.removeLayer(geocodeMarker);
+        geocodeMarker = L.marker([lat, lon], { icon: iconForRank("A") }).addTo(map);
+        map.setView([lat, lon], 15);
+        showToast(`移動しました: ${hit.display_name || q}`);
+      } catch (err) {
+        console.error("geocode error", err);
+        showToast("検索に失敗しました");
+      }
+    });
+    geocodeInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        geocodeButton.click();
+      }
+    });
     geoButton.addEventListener("click", () => {
       if (!navigator.geolocation) {
         showToast("位置情報に対応していません");
@@ -452,18 +540,22 @@
           userCircle = L.circle([latitude, longitude], { radius: accuracy || 120, color: "#0ea5e9", fillOpacity: 0.1 });
           userMarker.addTo(map);
           userCircle.addTo(map);
-        map.setView([latitude, longitude], 15);
-        showToast("現在地を表示しました");
-      },
-      () => showToast("現在地の取得に失敗しました"),
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
-  });
+          map.setView([latitude, longitude], 15);
+          showToast("現在地を表示しました");
+        },
+        () => showToast("現在地の取得に失敗しました"),
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    });
     themeSelect.addEventListener("change", () => {
       const theme = themeSelect.value || "light";
       Object.values(tileLayers).forEach(layer => map.removeLayer(layer));
       const layer = tileLayers[theme] || tileLayers.light;
       layer.addTo(map);
+    });
+    sortSelect.addEventListener("change", () => {
+      sortMode = sortSelect.value || "rank";
+      applyFilter();
     });
     loadCsv();
 
@@ -506,7 +598,17 @@
           marker,
         });
       });
-      rows.sort((a, b) => (a.rank || "").localeCompare(b.rank || "")); // rankで簡易ソート
+      const rankOrder = { S: 0, A: 1, B: 2, C: 3 };
+      rows.sort((a, b) => {
+        if (sortMode === "name") {
+          return a.name.localeCompare(b.name, "ja");
+        }
+        // rank優先 -> 同ランクは名前順
+        const ra = rankOrder[a.rank] ?? 99;
+        const rb = rankOrder[b.rank] ?? 99;
+        if (ra !== rb) return ra - rb;
+        return a.name.localeCompare(b.name, "ja");
+      });
       listCount.textContent = rows.length;
       drawerList.innerHTML = rows
         .map(row => {
