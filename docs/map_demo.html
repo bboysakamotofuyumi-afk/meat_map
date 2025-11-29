@@ -121,7 +121,6 @@
       box-shadow: 0 18px 60px rgba(0,0,0,0.45);
       display: grid;
       grid-template-rows: auto 1fr;
-      z-index: 1000;
     }
     .drawer-header {
       display: flex;
@@ -186,7 +185,6 @@
       border: 1px solid rgba(255, 255, 255, 0.08);
       font-size: 13px;
       box-shadow: 0 10px 40px rgba(0,0,0,0.35);
-      z-index: 1001;
     }
     .legend {
       position: fixed;
@@ -200,7 +198,6 @@
       font-size: 13px;
       min-width: 180px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.35);
-      z-index: 1000;
     }
     .legend-title {
       font-weight: 700;
@@ -302,32 +299,12 @@
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <script>
     const params = new URLSearchParams(location.search);
-    const rawCsv = params.get("csv") || "output/meatmap.csv";
-    // デフォルトは Pages 配信を想定した絶対パスを優先しつつ、複数フォールバックを試す。
-    const origin = window.location.origin;
-    const repoPath = "/meat_map/"; // Pages 配信パス
-    const defaultBranch = "make-a-big-promise";
-    const candidateUrls = [];
-    const addUrl = (u) => {
-      if (!u) return;
-      try {
-        const full = new URL(u, window.location.href).toString();
-        if (!candidateUrls.includes(full)) candidateUrls.push(full);
-      } catch (e) {
-        // 無効なURLは無視
-      }
-    };
-    if (/^https?:\/\//i.test(rawCsv)) {
-      addUrl(rawCsv);
-    } else {
-      addUrl(rawCsv);
-      addUrl(new URL(rawCsv, `${origin}${repoPath}`).toString()); // https://.../meat_map/output/...
-      addUrl(new URL(rawCsv, origin).toString()); // https://.../output/...
-      addUrl(`${origin}${repoPath}${rawCsv.replace(/^\//, "")}`); // 明示的に絶対パスを追加
+    const rawCsv = params.get("csv") || "/output/meatmap.csv";
+    // 解釈ルール: 絶対URL/ルート始まりはそのまま。相対パスはルートに付ける。
+    let csvUrl = rawCsv;
+    if (!/^https?:\/\//i.test(rawCsv) && !rawCsv.startsWith("/")) {
+      csvUrl = `/${rawCsv.replace(/^\.?\//, "")}`;
     }
-    // raw.githubusercontent フォールバック
-    addUrl(`https://raw.githubusercontent.com/GenkiShimura2000/meat_map/${defaultBranch}/${rawCsv.replace(/^\//, "")}`);
-    let csvUrl = candidateUrls[0] || rawCsv;
     const rankColors = { S: "#e11d48", A: "#f97316", B: "#0ea5e9", C: "#94a3b8" };
     const map = L.map("map", { center: [35.681236, 139.767125], zoom: 11, preferCanvas: true });
     const tileLayers = {
@@ -340,8 +317,7 @@
         maxZoom: 19,
       }),
     };
-    tileLayers.dark.addTo(map);
-    themeSelect.value = "dark";
+    tileLayers.light.addTo(map);
     const cluster = L.markerClusterGroup({ chunkedLoading: true, spiderfyOnMaxZoom: true });
     map.addLayer(cluster);
     const markers = [];
@@ -441,19 +417,21 @@
       rankTotals = { S: 0, A: 0, B: 0, C: 0 };
       genres.clear();
       try {
-        // すでに candidateUrls は上で組み立て済み
+        const candidateUrls = [];
+        if (/^https?:\/\//i.test(csvUrl)) {
+          candidateUrls.push(csvUrl);
+        } else {
+          candidateUrls.push(csvUrl); // 例: /output/...
+          candidateUrls.push(csvUrl.replace(/^\//, "./")); // 例: output/...
+        }
         let text = null;
         for (const url of candidateUrls) {
-          try {
-            const res = await fetch(url, { mode: "cors" });
-            if (!res.ok) continue;
-            text = await res.text();
-            break;
-          } catch (e) {
-            continue;
-          }
+          const res = await fetch(url);
+          if (!res.ok) continue;
+          text = await res.text();
+          break;
         }
-        if (!text) throw new Error(`CSV fetch failed: tried ${candidateUrls.join(", ")}`);
+        if (!text) throw new Error("CSV fetch failed");
         const meta = {};
         text.split(/\r?\n/).forEach(line => {
           if (line.startsWith("#")) {
@@ -502,9 +480,6 @@
       } catch (err) {
         showToast("CSV 読み込みに失敗しました");
         console.error("CSV fetch/parse error", err);
-        updatedLabel.textContent = "load error";
-        countLabel.textContent = "0 / 0";
-        drawerList.innerHTML = `<div class="list-item">CSV 取得失敗: ${err}</div>`;
       }
     }
 
