@@ -4,6 +4,16 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Tokyo Carnivore Meat Map - Demo</title>
+  <meta name="description" content="東京都内の肉料理店をS/Aランク中心にまとめたマップ。検索・住所検索・現在地表示に対応。" />
+  <meta property="og:title" content="Tokyo Carnivore Meat Map" />
+  <meta property="og:description" content="東京都の肉料理店をS/Aランク中心に掲載。検索・住所検索・現在地表示が使えるシンプルなマップです。" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://genkishimura2000.github.io/meat_map/map_demo.html" />
+  <meta property="og:image" content="https://genkishimura2000.github.io/meat_map/ogp.png" />
+  <meta property="og:image:alt" content="Tokyo Carnivore Meat Map OGP" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css" />
@@ -245,6 +255,124 @@
       padding: 6px 8px;
       outline: none;
     }
+    .lp {
+      padding: 28px 16px 64px;
+      background: radial-gradient(circle at 10% 0%, rgba(14, 165, 233, 0.08), transparent 32%), var(--bg);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text);
+    }
+    .lp-container {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+    .lp-headline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .lp-title {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: 0.2px;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: var(--panel);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .lp-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 14px;
+    }
+    .lp-card {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 14px 16px;
+      box-shadow: 0 18px 50px rgba(0,0,0,0.35);
+    }
+    .lp-card h2, .lp-card h3 {
+      margin: 0 0 8px 0;
+      font-size: 18px;
+    }
+    .lp-card p {
+      margin: 6px 0 10px 0;
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 14px;
+    }
+    .lp-card ul {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 14px;
+    }
+    .meta-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .ad-slot {
+      height: 120px;
+      border: 1px dashed rgba(255, 255, 255, 0.25);
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.03);
+    }
+    .support-button, .share-buttons a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-weight: 700;
+      color: #0f172a;
+      background: var(--accent);
+      box-shadow: 0 8px 24px rgba(249, 115, 22, 0.35);
+    }
+    .share-buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+    .lp-meta {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      align-items: center;
+      font-size: 14px;
+      color: var(--muted);
+    }
+    .lp-meta a {
+      color: var(--text);
+    }
+    @media (max-width: 900px) {
+      #app { grid-template-rows: auto auto 1fr; }
+      header { flex-direction: column; align-items: flex-start; }
+      .controls { width: 100%; }
+      .drawer { width: calc(100% - 28px); }
+    }
     a { color: var(--accent); }
   </style>
 </head>
@@ -294,6 +422,75 @@
     <div class="drawer-list" id="drawer-list"></div>
   </div>
 
+  <section class="lp">
+    <div class="lp-container">
+      <div class="lp-headline">
+        <div>
+          <div class="lp-title">Tokyo Carnivore Meat Map</div>
+          <div class="pill">東京都 / 肉料理店マップ（S/A 公開中・B/C は今後拡張予定）</div>
+        </div>
+        <div class="pill">CSV: <a href="output/meatmap.csv" target="_blank" rel="noopener">docs/output/meatmap.csv</a></div>
+      </div>
+
+      <div class="lp-grid">
+        <div class="lp-card">
+          <h2>このマップについて</h2>
+          <p>ホットペッパーなどから取得した「肉料理が強い店」をカーニボアスコアでランク付けし、マップ表示しています。</p>
+          <ul>
+            <li>対象エリア: 東京都（23区＋多摩）</li>
+            <li>対象カテゴリ: 焼肉 / ホルモン / ステーキ / シュラスコ / ジビエ など肉メインの飲食店</li>
+            <li>現在は S/A ランク中心を公開（B/C は更新環境が整い次第拡張）</li>
+            <li>地図機能: 検索・ジャンル絞り込み・並び替え・住所検索・現在地表示をサポート</li>
+          </ul>
+        </div>
+        <div class="lp-card">
+          <h2>データ更新</h2>
+          <p>CSV は <code>docs/output/meatmap.csv</code> にコミット済み。クエリ付きURLで直接指定できます（例: <code>?csv=output/meatmap.csv</code>）。</p>
+          <div class="meta-row">
+            <div class="pill">最終更新: <span id="updated-secondary">-</span></div>
+            <div class="pill">件数: <span id="count-secondary">-</span></div>
+          </div>
+          <p>ネットワークが利用できる環境で <code>python -m meatmap.cli --output output/meatmap.csv --copy-to-docs</code> を実行すると最新データを再生成できます。</p>
+        </div>
+        <div class="lp-card">
+          <h2>利用上の注意</h2>
+          <ul>
+            <li>営業時間・住所・閉店情報は変わる場合があります。来店前に公式情報をご確認ください。</li>
+            <li>位置情報はブラウザ内でのみ使用し、サーバーには送信しません。</li>
+            <li>マップ表示やCSV取得に失敗した場合はパス（クエリ）を確認し、時間をおいて再度アクセスしてください。</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="lp-grid">
+        <div class="lp-card">
+          <h3>広告枠（準備中）</h3>
+          <div class="ad-slot">AdSense 審査後に差し替え予定</div>
+          <p>上部ヘッダーや本文内に広告を配置する想定です。審査通過後にコードをここへ挿入してください。</p>
+        </div>
+        <div class="lp-card">
+          <h3>開発者を支援する</h3>
+          <p>マップが役に立ったら、コーヒー1杯分のサポートをお願いします。</p>
+          <a class="support-button" href="https://ko-fi.com" target="_blank" rel="noopener">Ko-fi / BuyMeACoffee へ</a>
+        </div>
+        <div class="lp-card">
+          <h3>シェアする</h3>
+          <p>SNSで共有してもらえると励みになります。</p>
+          <div class="share-buttons">
+            <a id="share-x" href="#" target="_blank" rel="noopener">X でシェア</a>
+            <a id="share-fb" href="#" target="_blank" rel="noopener">Facebook でシェア</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="lp-meta">
+        <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a>
+        <a href="terms.html" target="_blank" rel="noopener">利用規約 / 免責</a>
+        <span>お問い合わせ: SNS/メールを追記してください</span>
+      </div>
+    </div>
+  </section>
+
   <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
@@ -338,6 +535,10 @@
     const themeSelect = document.getElementById("theme-select");
     const sortSelect = document.getElementById("sort-select");
     const updatedLabel = document.getElementById("updated-label");
+    const updatedSecondary = document.getElementById("updated-secondary");
+    const countSecondary = document.getElementById("count-secondary");
+    const shareX = document.getElementById("share-x");
+    const shareFb = document.getElementById("share-fb");
     csvLabel.textContent = csvUrl;
     let rankTotals = { S: 0, A: 0, B: 0, C: 0 };
     let searchTerm = "";
@@ -346,6 +547,14 @@
     let userMarker = null;
     let userCircle = null;
     let geocodeMarker = null;
+    const shareUrl = location.href.split("#")[0];
+    const shareText = "Tokyo Carnivore Meat Map - 東京都の肉料理店マップ";
+    if (shareX) {
+      shareX.href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
+    }
+    if (shareFb) {
+      shareFb.href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+    }
 
     function showToast(msg) {
       toast.textContent = msg;
@@ -442,6 +651,9 @@
         });
         if (meta.generated_at_utc) {
           updatedLabel.textContent = meta.generated_at_utc;
+          if (updatedSecondary) {
+            updatedSecondary.textContent = meta.generated_at_utc;
+          }
         }
         const result = Papa.parse(text, {
           header: true,
@@ -473,6 +685,9 @@
           added += 1;
         });
         countLabel.textContent = `${added} / ${markers.length}`;
+        if (countSecondary) {
+          countSecondary.textContent = `${added} 件`;
+        }
         populateGenreOptions();
         renderLegend(rankTotals);
         showToast(`読み込み完了: ${added} 件`);
