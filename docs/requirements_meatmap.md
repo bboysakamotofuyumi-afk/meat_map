@@ -9,6 +9,7 @@
 - 前提: `HOTPEPPER_API_KEY` を環境変数または `.env` に設定。
 - コマンド例: `python -m meatmap.cli --output output/meatmap.csv`
 - ランクフィルタ: デフォルトは S/A のみを出力。`--include-rank-b` や `--include-rank-c` で範囲を広げられる。
+- マップデモ: `python -m http.server 8000` などでルートをホストし、`http://localhost:8000/docs/map_demo.html?csv=output/meatmap.csv` を開くと CSV を地図表示できる（デフォルトは `../output/meatmap.csv` を読む）。
 
 ## スコア閾値（ルールベース）
 
