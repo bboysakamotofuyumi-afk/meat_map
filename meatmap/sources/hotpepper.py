@@ -43,14 +43,26 @@ MEAT_KEYWORDS: Sequence[str] = [
 EXCLUDED_KEYWORDS: Sequence[str] = ("お好み焼", "もんじゃ")
 
 
+PER_PAGE_GENRE = 30  # Smaller per-page size to avoid oversized responses.
+PER_PAGE_KEYWORD = 20
+
+
 class HotPepperClient:
     BASE_URL = "https://webservice.recruit.co.jp/hotpepper/gourmet/v1/"
 
-    def __init__(self, api_key: Optional[str] = None, session: Optional[requests.Session] = None) -> None:
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        session: Optional[requests.Session] = None,
+        per_page_genre: int = PER_PAGE_GENRE,
+        per_page_keyword: int = PER_PAGE_KEYWORD,
+    ) -> None:
         self.api_key = api_key or os.getenv("HOTPEPPER_API_KEY")
         if not self.api_key:
             raise ValueError("HOTPEPPER_API_KEY is not set")
         self.session = session or requests.Session()
+        self.per_page_genre = per_page_genre
+        self.per_page_keyword = per_page_keyword
 
     def _request(self, params: Dict[str, str]) -> Dict:
         merged_params = {
@@ -60,7 +72,13 @@ class HotPepperClient:
         }
         response = self.session.get(self.BASE_URL, params=merged_params, timeout=30)
         response.raise_for_status()
-        payload = response.json()
+        try:
+            payload = response.json()
+        except ValueError as exc:
+            snippet = response.text[:400]
+            raise RuntimeError(
+                f"HotPepper API returned invalid JSON (status={response.status_code}): {exc}; snippet={snippet!r}"
+            ) from exc
         results = payload.get("results")
         if not results:
             raise RuntimeError("HotPepper API response missing 'results'")
@@ -107,18 +125,18 @@ class HotPepperClient:
         self,
         area_codes: Sequence[str],
         genre_codes: Sequence[str],
-        count: int = 100,
+        count: Optional[int] = None,
     ) -> List[RawStoreRecord]:
-        return self._fetch_shops(area_codes, "genre", genre_codes, count=count)
+        return self._fetch_shops(area_codes, "genre", genre_codes, count=count or self.per_page_genre)
 
     def fetch_shops_by_keyword(
         self,
         area_codes: Sequence[str],
         keywords: Sequence[str],
-        count: int = 50,
+        count: Optional[int] = None,
     ) -> List[RawStoreRecord]:
         # keyword検索はヒット数が多いため1回の取得数を抑える。
-        return self._fetch_shops(area_codes, "keyword", keywords, count=count)
+        return self._fetch_shops(area_codes, "keyword", keywords, count=count or self.per_page_keyword)
 
     def fetch_tokyo_meat_shops(self) -> List[RawStoreRecord]:
         records_by_id: Dict[str, RawStoreRecord] = {}
