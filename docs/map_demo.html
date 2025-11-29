@@ -302,11 +302,11 @@
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <script>
     const params = new URLSearchParams(location.search);
-    const rawCsv = params.get("csv") || "/output/meatmap.csv";
-    // 解釈ルール: 絶対URL/ルート始まりはそのまま。相対パスはルートに付ける。
+    const rawCsv = params.get("csv") || "output/meatmap.csv";
+    // 解釈ルール: 絶対URLならそのまま、相対はページURLを基点に解決。
     let csvUrl = rawCsv;
-    if (!/^https?:\/\//i.test(rawCsv) && !rawCsv.startsWith("/")) {
-      csvUrl = `/${rawCsv.replace(/^\.?\//, "")}`;
+    if (!/^https?:\/\//i.test(rawCsv)) {
+      csvUrl = new URL(rawCsv, window.location.href).toString();
     }
     const rankColors = { S: "#e11d48", A: "#f97316", B: "#0ea5e9", C: "#94a3b8" };
     const map = L.map("map", { center: [35.681236, 139.767125], zoom: 11, preferCanvas: true });
@@ -421,13 +421,7 @@
       rankTotals = { S: 0, A: 0, B: 0, C: 0 };
       genres.clear();
       try {
-        const candidateUrls = [];
-        if (/^https?:\/\//i.test(csvUrl)) {
-          candidateUrls.push(csvUrl);
-        } else {
-          candidateUrls.push(csvUrl); // 例: /output/...
-          candidateUrls.push(csvUrl.replace(/^\//, "./")); // 例: output/...
-        }
+        const candidateUrls = [csvUrl];
         let text = null;
         for (const url of candidateUrls) {
           const res = await fetch(url);
