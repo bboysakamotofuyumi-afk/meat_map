@@ -321,11 +321,12 @@
       addUrl(rawCsv);
     } else {
       addUrl(rawCsv);
-      addUrl(new URL(rawCsv, `${origin}${repoPath}`).toString());
-      addUrl(new URL(rawCsv, origin).toString());
+      addUrl(new URL(rawCsv, `${origin}${repoPath}`).toString()); // https://.../meat_map/output/...
+      addUrl(new URL(rawCsv, origin).toString()); // https://.../output/...
+      addUrl(`${origin}${repoPath}${rawCsv.replace(/^\//, "")}`); // 明示的に絶対パスを追加
     }
     // raw.githubusercontent フォールバック
-    addUrl(`https://raw.githubusercontent.com/GenkiShimura2000/meat_map/${defaultBranch}/${rawCsv.replace(/^\\//, "")}`);
+    addUrl(`https://raw.githubusercontent.com/GenkiShimura2000/meat_map/${defaultBranch}/${rawCsv.replace(/^\//, "")}`);
     let csvUrl = candidateUrls[0] || rawCsv;
     const rankColors = { S: "#e11d48", A: "#f97316", B: "#0ea5e9", C: "#94a3b8" };
     const map = L.map("map", { center: [35.681236, 139.767125], zoom: 11, preferCanvas: true });
