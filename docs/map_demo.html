@@ -303,8 +303,8 @@
     const origin = window.location.origin;
     const repoPath = "/meat_map/";
     const defaultBranch = "make-a-big-promise";
-    const candidateUrls: string[] = [];
-    const addUrl = (u: string | undefined) => {
+    const candidateUrls = [];
+    const addUrl = (u) => {
       if (!u) return;
       try {
         const full = new URL(u, window.location.href).toString();
@@ -433,21 +433,19 @@
       rankTotals = { S: 0, A: 0, B: 0, C: 0 };
       genres.clear();
       try {
-        const candidateUrls = [];
-        if (/^https?:\/\//i.test(csvUrl)) {
-          candidateUrls.push(csvUrl);
-        } else {
-          candidateUrls.push(csvUrl); // 例: /output/...
-          candidateUrls.push(csvUrl.replace(/^\//, "./")); // 例: output/...
-        }
+        const urlsToTry = candidateUrls.length ? candidateUrls : [csvUrl];
         let text = null;
-        for (const url of candidateUrls) {
-          const res = await fetch(url);
-          if (!res.ok) continue;
-          text = await res.text();
-          break;
+        for (const url of urlsToTry) {
+          try {
+            const res = await fetch(url);
+            if (!res.ok) continue;
+            text = await res.text();
+            break;
+          } catch (e) {
+            continue;
+          }
         }
-        if (!text) throw new Error("CSV fetch failed");
+        if (!text) throw new Error(`CSV fetch failed: tried ${urlsToTry.join(", ")}`);
         const meta = {};
         text.split(/\r?\n/).forEach(line => {
           if (line.startsWith("#")) {
