@@ -12,6 +12,24 @@
 - マップデモ: `python -m http.server 8000` などでルートをホストし、`http://localhost:8000/docs/map_demo.html?csv=/output/meatmap.csv` を開くと CSV を地図表示できる（クエリを省略すると `/output/meatmap.csv` を読む）。
 - GitHub Pages 用コピー: `--copy-to-docs` を付けて実行すると `docs/output/meatmap.csv` にもコピーされる（Pagesでそのまま参照可能）。
 - GitHub Pages 公開手順: `docs/README_pages.md` にまとめ。`--copy-to-docs` で CSV を配置 → コミット＆プッシュ → Pages を `/docs` 配信に設定。
+- 現在の状況（2025-11-29時点）:
+  - CSV: S/A のみを含む `docs/output/meatmap.csv` をコミット済み（先頭に生成時刻と件数のメタ行あり）。
+  - マップ: `docs/map_demo.html` はライトタイルがデフォルト。検索・ジャンル・並び替え・住所検索・現在地・リスト表示は有効。CSV取得が失敗した場合はトーストとレジェンドにエラー表示。
+  - Pages: ブランチ `make-a-big-promise` を `/docs` 配信。URLは `https://genkishimura2000.github.io/meat_map/map_demo.html?csv=output/meatmap.csv`（ピンが出ない場合はURLのクエリやCSVパスを要確認）。
+  - 直近の不具合: ダークデフォルト化と複数フォールバックで一時的にピンが出なくなったため、ライトデフォルト＋シンプルなページ相対CSVパスに戻している。
+
+## 今後の展望・TODO（引き継ぎメモ）
+- データ/更新:
+  - ネットワークが通る環境で `python -m meatmap.cli --output output/meatmap.csv --copy-to-docs --include-rank-b --include-rank-c` を実行し、B/C を含むCSVを更新（現状S/Aのみ）。
+  - HotPepperクライアントにはリトライを実装済み。必要ならレート制御やキャッシュを追加検討。
+- マップ:
+  - ダークデフォルトを再導入する場合は CSV 取得成功を優先してパス設計を見直す（ページ相対 + `/meat_map/` 絶対 + raw の順で試すなど）。
+  - 検索・住所検索・並び替え・リストは動作済み。レジェンド/トーストでエラーを可視化。
+- 運用:
+  - PagesはGitHub Actionsデプロイが有効。SecretsにAPIキーを入れて定期実行を設定するかは未着手。
+  - PAT/Secretsは都度Revoke/管理すること。`docs/README_pat.md` 参照。
+- ドキュメント:
+  - READMEに最新のマップ機能（住所検索・並び替え・ライトデフォルト）を追記する余地あり。
 
 ## スコア閾値（ルールベース）
 
