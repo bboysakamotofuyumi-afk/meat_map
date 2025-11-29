@@ -106,7 +106,12 @@
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <script>
     const params = new URLSearchParams(location.search);
-    const csvUrl = params.get("csv") || "../output/meatmap.csv";
+    const rawCsv = params.get("csv") || "/output/meatmap.csv";
+    // 解釈ルール: 絶対URL/ルート始まりはそのまま。相対パスはルートに付ける。
+    let csvUrl = rawCsv;
+    if (!/^https?:\/\//i.test(rawCsv) && !rawCsv.startsWith("/")) {
+      csvUrl = `/${rawCsv.replace(/^\.?\//, "")}`;
+    }
     const rankColors = { S: "#e11d48", A: "#f97316", B: "#0ea5e9", C: "#94a3b8" };
     const map = L.map("map", { center: [35.681236, 139.767125], zoom: 11, preferCanvas: true });
     L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
