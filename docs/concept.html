@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>サイト概要・コンセプト | Tokyo Carnivore Meat Map</title>
+  <meta name="description" content="Tokyo Carnivore Meat Map のコンセプト、ランク基準、データソース、更新方針、広告/収益化方針をまとめたページです。">
+  <style>
+    body {
+      margin: 0;
+      font-family: "Inter", "Noto Sans JP", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      line-height: 1.7;
+    }
+    header {
+      padding: 18px 16px;
+      background: linear-gradient(90deg, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.8));
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    h1 { margin: 0; font-size: 24px; }
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 24px 16px 48px;
+    }
+    h2 { margin-top: 24px; font-size: 18px; }
+    p, li { color: #cbd5e1; }
+    a { color: #f97316; }
+    .box {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>サイト概要・コンセプト</h1>
+  </header>
+  <main>
+    <section>
+      <h2>目的</h2>
+      <p>東京の「肉料理に強い店」を集め、S/Aランク中心でマップ表示する個人開発のデモサイトです。検索・ジャンル絞り込み・住所検索・現在地表示などの基本的なマップ機能を提供します。</p>
+    </section>
+
+    <section>
+      <h2>ランク基準（概要）</h2>
+      <ul>
+        <li>対象ジャンル: 焼肉 / ホルモン / ステーキ / シュラスコ / ジビエ など肉メインの飲食店</li>
+        <li>スコア要素: ジャンル、キャッチコピー/説明の肉ワード、評価・レビュー数</li>
+        <li>ランク閾値（例）: S=80以上、A=60以上、B=45以上、C=それ未満</li>
+        <li>現在は S/A を公開。B/C は更新環境が整い次第拡張予定</li>
+      </ul>
+      <div class="box">詳細ロジックは `meatmap/scoring.py` を参照してください。</div>
+    </section>
+
+    <section>
+      <h2>データソースと更新</h2>
+      <ul>
+        <li>主な取得元: ホットペッパーグルメ API（肉ジャンル＋キーワード検索）</li>
+        <li>CSV: `docs/output/meatmap.csv` を Pages で配信。<code>?csv=output/meatmap.csv</code> で指定可</li>
+        <li>更新方法: `python -m meatmap.cli --output output/meatmap.csv --copy-to-docs` をネットワーク有効な環境で実行</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>広告・収益化方針</h2>
+      <ul>
+        <li>現在: 広告コードは未設置。寄付ボタンのみ（Ko-fi/BMC想定）。</li>
+        <li>予定: AdSense 審査通過後、本文/サイド/フッターに広告枠を設置予定。</li>
+        <li>収益目安: 月3,000〜5,000 PVで数百〜1,000円程度を想定（RPM/CTRに依存）。寄付は1〜2ヶ月に1回、500〜1,000円程度を目標。</li>
+      </ul>
+      <div class="box">広告導入時はプライバシーポリシーを更新し、必要に応じて同意取得を行います。</div>
+    </section>
+
+    <section>
+      <h2>免責</h2>
+      <ul>
+        <li>掲載情報の正確性・最新性は保証しません。来店前に公式情報を確認してください。</li>
+        <li>位置情報はブラウザ内でのみ使用し、サーバーへ送信しません。</li>
+      </ul>
+      <p>詳細は <a href="terms.html">利用規約 / 免責</a> および <a href="privacy.html">プライバシーポリシー</a> を参照してください。</p>
+    </section>
+
+    <section>
+      <h2>運営・問い合わせ</h2>
+      <p>運営: Tokyo Carnivore Meat Map（個人開発）</p>
+      <p>問い合わせ: <a href="https://github.com/genkishimura2000/meat_map/issues" target="_blank" rel="noopener">GitHub Issues</a> / メール（必要なら <code>mailto:</code> を追記）</p>
+    </section>
+  </main>
+</body>
+</html>

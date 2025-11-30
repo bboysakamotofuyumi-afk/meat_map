@@ -27,6 +27,7 @@
   - 検索・住所検索・並び替え・リストは動作済み。レジェンド/トーストでエラーを可視化。
 - 運用:
   - PagesはGitHub Actionsデプロイが有効。SecretsにAPIキーを入れて定期実行を設定するかは未着手。
+  - 将来のAdSense運用に備え、ユーザーサイト用リポジトリ `genkishimura2000.github.io` を作成し、`index.html` から `/meat_map/` へのリンクとサイト概要を掲載する。ここにも AdSense のサイト確認用スクリプト（`<head>` 内の `<script ...>`）を挿入する。
   - PAT/Secretsは都度Revoke/管理すること。`docs/README_pat.md` 参照。
 - ドキュメント:
   - READMEに最新のマップ機能（住所検索・並び替え・ライトデフォルト）を追記する余地あり。
