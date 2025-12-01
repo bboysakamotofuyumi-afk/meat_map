@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Tokyo Carnivore Meat Map - Demo</title>
-  <meta name="description" content="東京都内の肉料理店をS/Aランク中心にまとめた肉マップ。検索・住所検索・現在地表示に対応、CSVはGitHub Pagesで配信中。" />
-  <meta property="og:title" content="東京 肉マップ | Carnivore Meat Map" />
-  <meta property="og:description" content="東京都の肉料理店をS/Aランク中心に掲載。検索・住所検索・現在地表示が使える肉マップ（CSV公開中）。" />
+  <title>東京都の肉料理マップ | 焼肉・ステーキを地図で探す</title>
+  <meta name="description" content="東京都内の焼肉、ステーキなど肉料理店をランク付きでマップ表示。エリア・ジャンル・予算で絞り込み可能な非公式まとめマップです。" />
+  <meta property="og:title" content="東京都の肉料理マップ" />
+  <meta property="og:description" content="東京都内の肉料理店を、独自スコアでランク付けして地図表示。焼肉・ステーキ・肉バルなど、ガッツリ肉が食べたいときのための非公式マップです。" />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://genkishimura2000.github.io/meat_map/map_demo.html" />
   <meta property="og:image" content="https://genkishimura2000.github.io/meat_map/ogp.png?v=20251129" />
-  <meta property="og:image:alt" content="Tokyo Carnivore Meat Map OGP" />
+  <meta property="og:image:alt" content="東京都の肉料理マップのOGP画像" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
@@ -133,6 +133,7 @@
       box-shadow: 0 18px 60px rgba(0,0,0,0.45);
       display: grid;
       grid-template-rows: auto 1fr;
+      z-index: 1000;
     }
     .drawer-header {
       display: flex;
@@ -210,6 +211,7 @@
       font-size: 13px;
       min-width: 180px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+      z-index: 1000;
     }
     .legend-title {
       font-weight: 700;
@@ -381,10 +383,8 @@
 <body>
   <div id="app">
     <header>
-      <div class="title">Tokyo Carnivore Meat Map (Leaflet Demo)</div>
-      <div class="chip">CSV: <strong id="csv-label">loading…</strong></div>
+      <div class="title">東京都の肉料理マップ</div>
       <div class="chip">Markers: <strong id="count-label">0</strong></div>
-      <div class="chip">Updated: <strong id="updated-label">-</strong></div>
       <div class="controls">
         <label class="control"><input type="checkbox" data-rank="S" checked>S</label>
         <label class="control"><input type="checkbox" data-rank="A" checked>A</label>
@@ -400,7 +400,6 @@
           <option value="rank">並び: ランク優先</option>
           <option value="name">並び: 名前順</option>
         </select>
-        <button id="fit-button" class="control-button" type="button">表示範囲にズーム</button>
         <button id="geo-button" class="control-button" type="button">現在地へ</button>
         <select id="theme-select" class="select">
           <option value="light">タイル: Light</option>
@@ -541,27 +540,23 @@
     const genres = new Set();
 
     const toast = document.getElementById("toast");
-    const csvLabel = document.getElementById("csv-label");
     const countLabel = document.getElementById("count-label");
     const legend = document.getElementById("legend");
     const drawerList = document.getElementById("drawer-list");
     const listCount = document.getElementById("list-count");
     const searchBox = document.getElementById("search-box");
     const genreSelect = document.getElementById("genre-select");
-    const fitButton = document.getElementById("fit-button");
     const geoButton = document.getElementById("geo-button");
     const geocodeInput = document.getElementById("geocode-input");
     const geocodeButton = document.getElementById("geocode-button");
     const themeSelect = document.getElementById("theme-select");
     const sortSelect = document.getElementById("sort-select");
-    const updatedLabel = document.getElementById("updated-label");
     const updatedSecondary = document.getElementById("updated-secondary");
     const countSecondary = document.getElementById("count-secondary");
     const shareX = document.getElementById("share-x");
     const shareFb = document.getElementById("share-fb");
     const supportLink = document.getElementById("support-link");
     const contactLink = document.getElementById("contact-link");
-    csvLabel.textContent = csvUrl;
     let rankTotals = { S: 0, A: 0, B: 0, C: 0 };
     let searchTerm = "";
     let selectedGenre = "";
@@ -702,7 +697,6 @@
           }
         });
         if (meta.generated_at_utc) {
-          updatedLabel.textContent = meta.generated_at_utc;
           if (updatedSecondary) {
             updatedSecondary.textContent = meta.generated_at_utc;
           }
@@ -758,12 +752,6 @@
     genreSelect.addEventListener("change", () => {
       selectedGenre = genreSelect.value.trim().toLowerCase();
       applyFilter();
-    });
-    fitButton.addEventListener("click", () => {
-      if (cluster.getLayers().length > 0) {
-        map.fitBounds(cluster.getBounds(), { padding: [24, 24] });
-        trackEvent("fit_bounds", { location: "header" });
-      }
     });
     geocodeButton.addEventListener("click", async () => {
       const q = geocodeInput.value.trim();
