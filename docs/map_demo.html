@@ -234,6 +234,11 @@
       padding: 6px 8px;
       outline: none;
     }
+    .search-label {
+      font-size: 13px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
     #map { width: 100%; height: 100%; }
     .toast {
       position: fixed;
@@ -426,7 +431,8 @@
           <option value="">ジャンル: すべて</option>
         </select>
         <div class="search-bar">
-          <input id="geocode-input" type="search" placeholder="住所で移動（例: 渋谷駅）">
+          <span class="search-label">住所で移動</span>
+          <input id="geocode-input" type="search" placeholder="例: 渋谷駅">
           <button id="geocode-button" class="control-button" type="button">検索</button>
           <button id="geo-button" class="control-button" type="button">現在地</button>
         </div>
