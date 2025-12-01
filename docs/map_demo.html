@@ -1069,8 +1069,8 @@
           return a.name.localeCompare(b.name, "ja");
         }
         // rank優先 -> 同ランクは名前順
-        const ra = rankOrder[a.rank] ?? 99;
-        const rb = rankOrder[b.rank] ?? 99;
+        const ra = rankOrder[a.rank] !== undefined ? rankOrder[a.rank] : 99;
+        const rb = rankOrder[b.rank] !== undefined ? rankOrder[b.rank] : 99;
         if (ra !== rb) return ra - rb;
         return a.name.localeCompare(b.name, "ja");
       });
