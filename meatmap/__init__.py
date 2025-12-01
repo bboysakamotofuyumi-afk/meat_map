@@ -1,5 +1,5 @@
 """
-Tokyo Carnivore Meat Map package.
+TOKYO MEAT MAP package.
 """
 
 __all__ = [

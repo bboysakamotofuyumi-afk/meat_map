@@ -1,4 +1,4 @@
-# Tokyo Carnivore Meat Map
+# TOKYO MEAT MAP
 
 ## ローカル実行と公開までの最短手順
 
