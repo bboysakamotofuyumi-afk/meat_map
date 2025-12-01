@@ -217,21 +217,23 @@
     }
     .search-bar {
       display: flex;
-      gap: 8px;
+      flex-wrap: nowrap;
+      gap: 6px;
       align-items: center;
-      width: 100%;
-      max-width: 360px;
+      width: auto;
+      max-width: none;
       background: var(--panel);
       border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 10px;
-      padding: 6px 8px;
+      padding: 4px 6px;
     }
     .search-bar input {
       flex: 1;
+      min-width: 130px;
       background: transparent;
       border: none;
       color: var(--text);
-      padding: 6px 8px;
+      padding: 4px 6px;
       outline: none;
     }
     .search-label {
