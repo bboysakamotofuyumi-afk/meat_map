@@ -124,6 +124,9 @@
     .select option {
       color: #111827;
     }
+    .theme-container {
+      margin-left: auto;
+    }
     .drawer {
       position: fixed;
       left: 14px;
@@ -378,6 +381,7 @@
       #app { grid-template-rows: auto auto 1fr; }
       header { flex-direction: column; align-items: flex-start; }
       .controls { width: 100%; }
+      .theme-container { margin-left: 0; }
       .drawer { width: calc(100% - 28px); }
     }
     a { color: var(--accent); }
@@ -401,6 +405,8 @@
           <button id="geocode-button" class="control-button" type="button">検索</button>
           <button id="geo-button" class="control-button" type="button">現在地</button>
         </div>
+      </div>
+      <div class="theme-container">
         <select id="theme-select" class="select">
           <option value="light">テーマ: Light</option>
           <option value="dark">テーマ: Dark</option>
@@ -656,15 +662,36 @@
 
     function iconForRank(rank) {
       const color = rankColors[rank] || rankColors.C;
-      const svg = encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='32' height='48' viewBox='0 0 32 48'><path d='M16 0C7 0 0 7 0 16c0 12 16 32 16 32s16-20 16-32C32 7 25 0 16 0z' fill='${color}'/><text x='16' y='22' text-anchor='middle' fill='white' font-size='16' font-family='Inter, sans-serif' font-weight='700'>${rank || "?"}</text></svg>`);
-      return L.icon({ iconUrl: `data:image/svg+xml,${svg}`, iconSize: [28, 42], iconAnchor: [14, 42], popupAnchor: [0, -36] });
+      const svg = encodeURIComponent(
+        `<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'>
+          <defs>
+            <linearGradient id='meatGrad' x1='0%' y1='0%' x2='100%' y2='100%'>
+              <stop offset='0%' stop-color='${color}' stop-opacity='0.95' />
+              <stop offset='100%' stop-color='#7f1d1d' stop-opacity='0.95' />
+            </linearGradient>
+          </defs>
+          <path d='M8 10c4-6 14-6 20-2s8 12 4 18-12 8-18 4S4 16 8 10z' fill='url(#meatGrad)' stroke='#fecaca' stroke-width='2' />
+          <circle cx='24' cy='16' r='5' fill='#fee2e2' />
+          <circle cx='24' cy='16' r='2.2' fill='#fecaca' />
+          <path d='M12 22c2 2 6 4 10 4' stroke='#fecaca' stroke-width='2' stroke-linecap='round' />
+          <text x='20' y='36' text-anchor='middle' fill='white' font-size='12' font-family='Inter, sans-serif' font-weight='700'>${rank || "?"}</text>
+        </svg>`
+      );
+      return L.icon({
+        iconUrl: `data:image/svg+xml,${svg}`,
+        iconSize: [32, 32],
+        iconAnchor: [16, 28],
+        popupAnchor: [0, -24],
+      });
     }
 
     function createPopup(row) {
       const rating = row.rating ? `★${row.rating} (${row.review_count || 0})` : "";
       const notes = row.notes ? `<div style="margin-top:4px; color:#cbd5e1;">${row.notes}</div>` : "";
       const url = row.url ? `<div style="margin-top:6px;"><a href="${row.url}" target="_blank" rel="noopener">公式/詳細</a></div>` : "";
-      const rankBadge = `<span class="rank-badge" style="background:${rankColors[row.carnivore_rank] || "#cbd5e1"}">${row.carnivore_rank || "-"}</span>`;
+      const rankBadge = row.carnivore_rank
+        ? `<span class="rank-badge" style="background:${rankColors[row.carnivore_rank] || "#cbd5e1"}">${row.carnivore_rank}</span>`
+        : "";
       const genres = row.genre ? `<div style="color:#cbd5e1; margin-top:4px;">${row.genre}</div>` : "";
       const reviewBadge = row.review_count
         ? `<span style="display:inline-block; background:rgba(255,255,255,0.08); color:#cbd5e1; padding:4px 8px; border-radius:8px; font-size:12px;">${rating || "未評価"}</span>`
@@ -679,7 +706,6 @@
             ${rankBadge}
           </div>
           <div style="color:#cbd5e1;">${row.address || "住所不明"}</div>
-          <div style="margin-top:4px;">スコア: ${row.carnivore_score ?? "-"} / ランク: <strong>${row.carnivore_rank || "-"}</strong></div>
           ${genres}
           <div style="margin-top:4px; display:flex; gap:6px; align-items:center;">${reviewBadge}</div>
           ${notes}
