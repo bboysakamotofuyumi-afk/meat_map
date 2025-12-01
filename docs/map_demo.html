@@ -92,7 +92,7 @@
     .control-select {
       background: var(--panel);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      color: var(--text);
+      color: #f9fafb;
       padding: 8px 10px;
       border-radius: 8px;
       font-size: 13px;
@@ -113,7 +113,7 @@
     .select {
       background: var(--panel);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      color: var(--text);
+      color: #f9fafb;
       padding: 8px 10px;
       border-radius: 8px;
       font-size: 13px;
@@ -383,8 +383,6 @@
 <body>
   <div id="app">
     <header>
-      <div class="title">東京都の肉料理マップ</div>
-      <div class="chip">Markers: <strong id="count-label">0</strong></div>
       <div class="controls">
         <label class="control"><input type="checkbox" data-rank="S" checked>S</label>
         <label class="control"><input type="checkbox" data-rank="A" checked>A</label>
@@ -392,23 +390,18 @@
         <label class="control"><input type="checkbox" data-rank="C">C</label>
       </div>
       <div class="controls">
-        <input id="search-box" class="control-input" type="search" placeholder="店名/住所/ジャンルで検索">
+        <div class="search-bar">
+          <input id="geocode-input" type="search" placeholder="住所で移動（例: 渋谷駅）">
+          <button id="geocode-button" class="control-button" type="button">住所検索</button>
+          <button id="geo-button" class="control-button" type="button">現在地へ</button>
+        </div>
         <select id="genre-select" class="control-select">
           <option value="">ジャンル: すべて</option>
         </select>
-        <select id="sort-select" class="select">
-          <option value="rank">並び: ランク優先</option>
-          <option value="name">並び: 名前順</option>
-        </select>
-        <button id="geo-button" class="control-button" type="button">現在地へ</button>
         <select id="theme-select" class="select">
           <option value="light">タイル: Light</option>
           <option value="dark">タイル: Dark</option>
         </select>
-      </div>
-      <div class="search-bar">
-        <input id="geocode-input" type="search" placeholder="住所で移動（例: 渋谷駅）">
-        <button id="geocode-button" class="control-button" type="button">住所検索</button>
       </div>
     </header>
     <div id="map"></div>
@@ -418,6 +411,10 @@
   <div class="drawer" id="drawer">
     <div class="drawer-header">
       <div class="drawer-title">リスト (表示中のみ)</div>
+      <select id="sort-select" class="select">
+        <option value="rank">並び: ランク優先</option>
+        <option value="name">並び: 名前順</option>
+      </select>
       <div class="chip"><span id="list-count">0</span></div>
     </div>
     <div class="drawer-list" id="drawer-list"></div>
@@ -537,14 +534,11 @@
     const cluster = L.markerClusterGroup({ chunkedLoading: true, spiderfyOnMaxZoom: true });
     map.addLayer(cluster);
     const markers = [];
-    const genres = new Set();
 
     const toast = document.getElementById("toast");
-    const countLabel = document.getElementById("count-label");
     const legend = document.getElementById("legend");
     const drawerList = document.getElementById("drawer-list");
     const listCount = document.getElementById("list-count");
-    const searchBox = document.getElementById("search-box");
     const genreSelect = document.getElementById("genre-select");
     const geoButton = document.getElementById("geo-button");
     const geocodeInput = document.getElementById("geocode-input");
@@ -558,8 +552,6 @@
     const supportLink = document.getElementById("support-link");
     const contactLink = document.getElementById("contact-link");
     let rankTotals = { S: 0, A: 0, B: 0, C: 0 };
-    let searchTerm = "";
-    let selectedGenre = "";
     let sortMode = "rank";
     let userMarker = null;
     let userCircle = null;
@@ -647,31 +639,35 @@
       const allowed = Array.from(document.querySelectorAll('input[data-rank]'))
         .filter(cb => cb.checked)
         .map(cb => cb.getAttribute("data-rank"));
+      const bounds = map.getBounds();
       cluster.clearLayers();
       const visibleByRank = { S: 0, A: 0, B: 0, C: 0 };
       let visible = 0;
+      const genreCounts = new Map();
+      const selectedGenre = (genreSelect.value || "").trim().toLowerCase();
       markers.forEach(marker => {
         const rank = marker.rank || marker.options.rank || "C";
         const meta = marker.meta || {};
-        const haystack = (meta.name + " " + meta.address + " " + meta.genreText).toLowerCase();
-        const searchOk = !searchTerm || haystack.includes(searchTerm);
+        if (!bounds.contains(marker.getLatLng())) return;
         const genreOk = !selectedGenre || (meta.genreText || "").toLowerCase().includes(selectedGenre);
-        if (allowed.includes(rank) && searchOk && genreOk) {
-          cluster.addLayer(marker);
-          visibleByRank[rank] = (visibleByRank[rank] || 0) + 1;
-          visible += 1;
-        }
+        if (!allowed.includes(rank) || !genreOk) return;
+        cluster.addLayer(marker);
+        visibleByRank[rank] = (visibleByRank[rank] || 0) + 1;
+        visible += 1;
+        const genreText = meta.genreText || "";
+        genreText.split(",").map(g => g.trim()).filter(Boolean).forEach(g => {
+          genreCounts.set(g, (genreCounts.get(g) || 0) + 1);
+        });
       });
-      countLabel.textContent = `${visible} / ${markers.length}`;
       renderLegend(visibleByRank);
-      renderList(allowed);
+      populateGenreOptionsFromCounts(genreCounts);
+      renderList(allowed, bounds);
       showToast(`表示中 ${visible} 件 / ランク: ${allowed.join(", ")}`);
     }
 
     async function loadCsv() {
       showToast("CSV を読み込み中…");
       rankTotals = { S: 0, A: 0, B: 0, C: 0 };
-      genres.clear();
       try {
         const candidateUrls = [];
         if (/^https?:\/\//i.test(csvUrl)) {
@@ -718,7 +714,6 @@
           const rank = row.carnivore_rank || "C";
           rankTotals[rank] = (rankTotals[rank] || 0) + 1;
           const genreText = (row.genre || "").trim();
-          genreText.split(",").map(g => g.trim()).filter(Boolean).forEach(g => genres.add(g));
           const marker = L.marker([lat, lng], { icon: iconForRank(rank), rank });
           marker.rank = rank; // keep rank on instance for filtering/legend
           marker.meta = {
@@ -730,11 +725,9 @@
           markers.push(marker);
           added += 1;
         });
-        countLabel.textContent = `${added} / ${markers.length}`;
         if (countSecondary) {
           countSecondary.textContent = `${added} 件`;
         }
-        populateGenreOptions();
         renderLegend(rankTotals);
         showToast(`読み込み完了: ${added} 件`);
         applyFilter();
@@ -745,10 +738,6 @@
     }
 
     document.querySelectorAll('input[data-rank]').forEach(cb => cb.addEventListener("change", applyFilter));
-    searchBox.addEventListener("input", () => {
-      searchTerm = searchBox.value.trim().toLowerCase();
-      applyFilter();
-    });
     genreSelect.addEventListener("change", () => {
       selectedGenre = genreSelect.value.trim().toLowerCase();
       applyFilter();
@@ -826,6 +815,7 @@
       sortMode = sortSelect.value || "rank";
       applyFilter();
     });
+    map.on("moveend", applyFilter);
     loadCsv();
 
     function renderLegend(counts) {
@@ -842,23 +832,33 @@
       legend.innerHTML = `<div class="legend-title">ランク別 件数 (表示/総数)</div>${lines.join("")}`;
     }
 
-    function populateGenreOptions() {
-      const sorted = Array.from(genres).sort((a, b) => a.localeCompare(b, "ja"));
+    function populateGenreOptionsFromCounts(genreCounts) {
+      const entries = Array.from(genreCounts.entries()).filter(([, count]) => count > 0);
+      const sorted = entries.sort((a, b) => a[0].localeCompare(b[0], "ja"));
+      const previous = genreSelect.value;
       const options = ['<option value="">ジャンル: すべて</option>'].concat(
-        sorted.map(g => `<option value="${g}">${g}</option>`)
+        sorted.map(([name, count]) => `<option value="${name}">${name} (${count})</option>`)
       );
       genreSelect.innerHTML = options.join("");
+      if (previous) {
+        const exists = sorted.some(([name]) => name === previous);
+        if (exists) {
+          genreSelect.value = previous;
+        } else {
+          genreSelect.value = "";
+        }
+      }
     }
 
-    function renderList(allowedRanks) {
+    function renderList(allowedRanks, bounds) {
       const rows = [];
+      const selectedGenre = (genreSelect.value || "").trim().toLowerCase();
       markers.forEach(marker => {
         const rank = marker.rank || marker.options.rank || "C";
         const meta = marker.meta || {};
-        const haystack = (meta.name + " " + meta.address + " " + meta.genreText).toLowerCase();
-        const searchOk = !searchTerm || haystack.includes(searchTerm);
+        if (!bounds.contains(marker.getLatLng())) return;
         const genreOk = !selectedGenre || (meta.genreText || "").toLowerCase().includes(selectedGenre);
-        if (!allowedRanks.includes(rank) || !searchOk || !genreOk) return;
+        if (!allowedRanks.includes(rank) || !genreOk) return;
         rows.push({
           name: meta.name || "(名称不明)",
           address: meta.address || "",
