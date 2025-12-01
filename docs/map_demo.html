@@ -90,9 +90,9 @@
       outline: none;
     }
     .control-select {
-      background: var(--panel);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: #f9fafb;
+      background: #e5e7eb;
+      border: 1px solid #cbd5e1;
+      color: #111827;
       padding: 8px 10px;
       border-radius: 8px;
       font-size: 13px;
@@ -111,14 +111,18 @@
     }
     .control-button:active { transform: translateY(1px); }
     .select {
-      background: var(--panel);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: #f9fafb;
+      background: #e5e7eb;
+      border: 1px solid #cbd5e1;
+      color: #111827;
       padding: 8px 10px;
       border-radius: 8px;
       font-size: 13px;
       min-width: 160px;
       outline: none;
+    }
+    .control-select option,
+    .select option {
+      color: #111827;
     }
     .drawer {
       position: fixed;
@@ -134,14 +138,31 @@
       display: grid;
       grid-template-rows: auto 1fr;
       z-index: 1000;
+      transition: transform 0.25s ease, opacity 0.25s ease;
+    }
+    .drawer--hidden {
+      transform: translateX(calc(-100% - 24px));
+      opacity: 0;
+      pointer-events: none;
     }
     .drawer-header {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
+      flex-direction: column;
+      align-items: stretch;
       padding: 10px 12px;
       gap: 8px;
       border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .drawer-header-main {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .drawer-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
     .drawer-title { font-weight: 700; color: var(--text); }
     .drawer-list {
@@ -200,45 +221,7 @@
       box-shadow: 0 10px 40px rgba(0,0,0,0.35);
     }
     .legend {
-      position: fixed;
-      right: 14px;
-      bottom: 14px;
-      background: rgba(15, 23, 42, 0.92);
-      color: var(--text);
-      padding: 10px 12px;
-      border-radius: 10px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      font-size: 13px;
-      min-width: 180px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
-      z-index: 1000;
-    }
-    .legend-title {
-      font-weight: 700;
-      margin-bottom: 6px;
-      color: var(--muted);
-    }
-    .legend-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin: 4px 0;
-    }
-    .legend-color {
-      width: 14px;
-      height: 14px;
-      border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      display: inline-block;
-    }
-    .legend-label {
-      width: 16px;
-      font-weight: 700;
-      text-align: center;
-    }
-    .legend-count {
-      margin-left: auto;
-      color: var(--muted);
+      display: none;
     }
     .search-bar {
       display: flex;
@@ -371,6 +354,26 @@
     .lp-meta a {
       color: var(--text);
     }
+    .drawer-toggle-button {
+      position: fixed;
+      left: 14px;
+      bottom: 14px;
+      z-index: 1100;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--text);
+      font-size: 13px;
+      display: none;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+    .drawer-toggle-button span {
+      font-size: 16px;
+      line-height: 1;
+    }
     @media (max-width: 900px) {
       #app { grid-template-rows: auto auto 1fr; }
       header { flex-direction: column; align-items: flex-start; }
@@ -395,8 +398,8 @@
         </select>
         <div class="search-bar">
           <input id="geocode-input" type="search" placeholder="住所で移動（例: 渋谷駅）">
-          <button id="geocode-button" class="control-button" type="button">住所検索</button>
-          <button id="geo-button" class="control-button" type="button">現在地へ</button>
+          <button id="geocode-button" class="control-button" type="button">検索</button>
+          <button id="geo-button" class="control-button" type="button">現在地</button>
         </div>
         <select id="theme-select" class="select">
           <option value="light">テーマ: Light</option>
@@ -408,14 +411,21 @@
   </div>
   <div class="toast" id="toast">CSV を読み込み中…</div>
   <div class="legend" id="legend"></div>
+  <button id="drawer-toggle-button" class="drawer-toggle-button" type="button" aria-label="リストを隠す">
+    <span>◀</span><span>リスト</span>
+  </button>
   <div class="drawer" id="drawer">
     <div class="drawer-header">
-      <div class="drawer-title">リスト (表示中のみ)</div>
+      <div class="drawer-header-main">
+        <div class="drawer-title">リスト (表示中のみ)</div>
+        <div class="drawer-header-actions">
+          <div class="chip"><span id="list-count">0</span></div>
+        </div>
+      </div>
       <select id="sort-select" class="select">
         <option value="rank">並び: ランク優先</option>
         <option value="name">並び: 名前順</option>
       </select>
-      <div class="chip"><span id="list-count">0</span></div>
     </div>
     <div class="drawer-list" id="drawer-list"></div>
   </div>
@@ -442,7 +452,7 @@
         </div>
         <div class="lp-card">
           <h2>データ更新</h2>
-          <p>CSV は <code>docs/output/meatmap.csv</code> にコミット済み。クエリ付きURLで直接指定できます（例: <code>?csv=output/meatmap.csv</code>）。</p>
+          <p>マップで利用する店舗データは、あらかじめ生成したCSVを読み込んで表示しています。</p>
           <div class="meta-row">
             <div class="pill">最終更新: <span id="updated-secondary">-</span></div>
             <div class="pill">件数: <span id="count-secondary">-</span></div>
@@ -518,7 +528,17 @@
       csvUrl = `/${rawCsv.replace(/^\.?\//, "")}`;
     }
     const rankColors = { S: "#e11d48", A: "#f97316", B: "#0ea5e9", C: "#94a3b8" };
-    const map = L.map("map", { center: [35.681236, 139.767125], zoom: 11, preferCanvas: true });
+    const tokyoBounds = L.latLngBounds(
+      [35.4, 139.2],
+      [35.9, 139.95]
+    );
+    const map = L.map("map", {
+      center: [35.681236, 139.767125],
+      zoom: 11,
+      preferCanvas: true,
+      maxBounds: tokyoBounds,
+      maxBoundsViscosity: 0.8,
+    });
     const tileLayers = {
       light: L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
         attribution: "&copy; OpenStreetMap & CARTO",
@@ -535,7 +555,6 @@
     const markers = [];
 
     const toast = document.getElementById("toast");
-    const legend = document.getElementById("legend");
     const drawerList = document.getElementById("drawer-list");
     const listCount = document.getElementById("list-count");
     const genreSelect = document.getElementById("genre-select");
@@ -658,7 +677,6 @@
           genreCounts.set(g, (genreCounts.get(g) || 0) + 1);
         });
       });
-      renderLegend(visibleByRank);
       populateGenreOptionsFromCounts(genreCounts);
       renderList(allowed, bounds);
       showToast(`表示中 ${visible} 件 / ランク: ${allowed.join(", ")}`);
@@ -727,7 +745,6 @@
         if (countSecondary) {
           countSecondary.textContent = `${added} 件`;
         }
-        renderLegend(rankTotals);
         showToast(`読み込み完了: ${added} 件`);
         applyFilter();
       } catch (err) {
@@ -817,20 +834,6 @@
     map.on("moveend", applyFilter);
     loadCsv();
 
-    function renderLegend(counts) {
-      const ranks = ["S", "A", "B", "C"];
-      const lines = ranks.map(rank => {
-        const total = rankTotals[rank] || 0;
-        const visible = counts ? counts[rank] || 0 : total;
-        return `<div class="legend-row">
-          <span class="legend-color" style="background:${rankColors[rank] || "#94a3b8"}"></span>
-          <span class="legend-label">${rank}</span>
-          <span class="legend-count">${visible} / ${total}</span>
-        </div>`;
-      });
-      legend.innerHTML = `<div class="legend-title">ランク別 件数 (表示/総数)</div>${lines.join("")}`;
-    }
-
     function populateGenreOptionsFromCounts(genreCounts) {
       const entries = Array.from(genreCounts.entries()).filter(([, count]) => count > 0);
       const sorted = entries.sort((a, b) => a[0].localeCompare(b[0], "ja"));
@@ -899,6 +902,22 @@
           }
         });
       });
+    }
+
+    const drawer = document.getElementById("drawer");
+    const drawerToggleButton = document.getElementById("drawer-toggle-button");
+    if (drawer && drawerToggleButton) {
+      drawerToggleButton.addEventListener("click", () => {
+        const hidden = drawer.classList.toggle("drawer--hidden");
+        if (hidden) {
+          drawerToggleButton.setAttribute("aria-label", "リストを表示");
+          drawerToggleButton.firstElementChild.textContent = "▶";
+        } else {
+          drawerToggleButton.setAttribute("aria-label", "リストを隠す");
+          drawerToggleButton.firstElementChild.textContent = "◀";
+        }
+      });
+      drawerToggleButton.style.display = "inline-flex";
     }
   </script>
 </body>
