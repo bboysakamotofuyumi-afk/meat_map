@@ -127,6 +127,31 @@
     .theme-container {
       margin-left: auto;
     }
+    .meat-cluster {
+      background: radial-gradient(circle at 30% 30%, #fecaca, #b91c1c);
+      border-radius: 999px;
+      color: #f9fafb;
+      border: 2px solid #fee2e2;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 13px;
+    }
+    .meat-cluster-inner {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+    }
+    .meat-cluster-meat {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: conic-gradient(from 140deg, #fecaca, #b91c1c, #fecaca);
+      border: 1px solid rgba(248, 250, 252, 0.7);
+    }
     .drawer {
       position: fixed;
       left: 14px;
@@ -556,7 +581,18 @@
       }),
     };
     tileLayers.light.addTo(map);
-    const cluster = L.markerClusterGroup({ chunkedLoading: true, spiderfyOnMaxZoom: true });
+    const cluster = L.markerClusterGroup({
+      chunkedLoading: true,
+      spiderfyOnMaxZoom: true,
+      iconCreateFunction: (cl) => {
+        const count = cl.getChildCount();
+        return L.divIcon({
+          html: `<div class="meat-cluster-inner"><span class="meat-cluster-meat"></span><span>${count}</span></div>`,
+          className: "meat-cluster",
+          iconSize: [40, 40],
+        });
+      },
+    });
     map.addLayer(cluster);
     const markers = [];
     const geocodeQueue = [];
@@ -565,6 +601,7 @@
     const GEOCODE_CACHE_KEY = "tmm_geocode_cache_v1";
     const GEOCODE_MAX_REQUESTS = 300;
     let geocodeCache = {};
+    const allGenreCounts = new Map();
 
     const toast = document.getElementById("toast");
     const drawerList = document.getElementById("drawer-list");
@@ -803,7 +840,6 @@
       cluster.clearLayers();
       const visibleByRank = { S: 0, A: 0, B: 0, C: 0 };
       let visible = 0;
-      const genreCounts = new Map();
       const selectedGenre = (genreSelect.value || "").trim().toLowerCase();
       markers.forEach(marker => {
         const rank = marker.rank || marker.options.rank || "C";
@@ -814,12 +850,7 @@
         cluster.addLayer(marker);
         visibleByRank[rank] = (visibleByRank[rank] || 0) + 1;
         visible += 1;
-        const genreText = meta.genreText || "";
-        genreText.split(",").map(g => g.trim()).filter(Boolean).forEach(g => {
-          genreCounts.set(g, (genreCounts.get(g) || 0) + 1);
-        });
       });
-      populateGenreOptionsFromCounts(genreCounts);
       renderList(allowed, bounds);
       showToast(`表示中 ${visible} 件 / ランク: ${allowed.join(", ")}`);
     }
@@ -875,6 +906,9 @@
             const rank = row.carnivore_rank || "C";
             rankTotals[rank] = (rankTotals[rank] || 0) + 1;
             const genreText = (row.genre || "").trim();
+            if (genreText) {
+              allGenreCounts.set(genreText, (allGenreCounts.get(genreText) || 0) + 1);
+            }
             const marker = L.marker([lat, lng], { icon: iconForRank(rank), rank });
             marker.rank = rank; // keep rank on instance for filtering/legend
             marker.meta = {
@@ -891,6 +925,9 @@
         });
         if (countSecondary) {
           countSecondary.textContent = `${added} 件`;
+        }
+        if (allGenreCounts.size) {
+          populateGenreOptionsFromCounts(allGenreCounts);
         }
         showToast(`読み込み完了: ${added} 件`);
         applyFilter();
