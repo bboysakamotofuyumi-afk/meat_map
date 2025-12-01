@@ -390,17 +390,17 @@
         <label class="control"><input type="checkbox" data-rank="C">C</label>
       </div>
       <div class="controls">
+        <select id="genre-select" class="control-select">
+          <option value="">ジャンル: すべて</option>
+        </select>
         <div class="search-bar">
           <input id="geocode-input" type="search" placeholder="住所で移動（例: 渋谷駅）">
           <button id="geocode-button" class="control-button" type="button">住所検索</button>
           <button id="geo-button" class="control-button" type="button">現在地へ</button>
         </div>
-        <select id="genre-select" class="control-select">
-          <option value="">ジャンル: すべて</option>
-        </select>
         <select id="theme-select" class="select">
-          <option value="light">タイル: Light</option>
-          <option value="dark">タイル: Dark</option>
+          <option value="light">テーマ: Light</option>
+          <option value="dark">テーマ: Dark</option>
         </select>
       </div>
     </header>
