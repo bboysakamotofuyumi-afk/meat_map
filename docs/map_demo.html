@@ -668,28 +668,13 @@
       currentSuggestions = [];
     }
 
-    function iconForRank(rank) {
-      const color = rankColors[rank] || rankColors.C;
-      const svg = encodeURIComponent(
-        `<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'>
-          <defs>
-            <linearGradient id='meatGrad' x1='0%' y1='0%' x2='100%' y2='100%'>
-              <stop offset='0%' stop-color='${color}' stop-opacity='0.95' />
-              <stop offset='100%' stop-color='#7f1d1d' stop-opacity='0.95' />
-            </linearGradient>
-          </defs>
-          <path d='M8 10c4-6 14-6 20-2s8 12 4 18-12 8-18 4S4 16 8 10z' fill='url(#meatGrad)' stroke='#fecaca' stroke-width='2' />
-          <circle cx='24' cy='16' r='5' fill='#fee2e2' />
-          <circle cx='24' cy='16' r='2.2' fill='#fecaca' />
-          <path d='M12 22c2 2 6 4 10 4' stroke='#fecaca' stroke-width='2' stroke-linecap='round' />
-          <text x='20' y='36' text-anchor='middle' fill='white' font-size='12' font-family='Inter, sans-serif' font-weight='700'>${rank || "?"}</text>
-        </svg>`
-      );
+    function iconForRank() {
+      // 共通のステーキ画像ピン（いらすとや素材）
       return L.icon({
-        iconUrl: `data:image/svg+xml,${svg}`,
-        iconSize: [32, 32],
-        iconAnchor: [16, 28],
-        popupAnchor: [0, -24],
+        iconUrl: "./assets/pins/steak.png",
+        iconSize: [48, 48],
+        iconAnchor: [24, 44],
+        popupAnchor: [0, -36],
       });
     }
 

@@ -464,5 +464,17 @@
     - データ更新 のタイルは削除
     - このマップについて に最終更新を移動
     - [マップ表示やCSV取得に失敗した場合はパス（クエリ）を確認し、時間をおいて再度アクセスしてください。]という文字列は削除
+    
+    - フリー素材
+      - ステーキ「https://www.irasutoya.com/2012/03/blog-post_9864.html」
+      - シュラスコ「https://www.irasutoya.com/2018/03/blog-post_19.html」
+      - 焼肉「https://www.irasutoya.com/2020/03/blog-post_2.html」
+      - 焼き鳥「https://www.irasutoya.com/2013/11/blog-post_535.html」
+      - しゃぶしゃぶ「https://www.irasutoya.com/2013/01/blog-post_702.html」
+      - もつ焼き「https://www.irasutoya.com/2018/01/blog-post_683.html」
+      - 中国「https://www.irasutoya.com/2013/07/blog-post_1944.html」
+      - 韓国「https://www.irasutoya.com/2020/09/blog-post_89.html」
+      - クラスタ「https://www.irasutoya.com/2013/02/blog-post_3383.html」
+
   
   codex resume 019ad7c6-7892-7760-ae49-cf1a48e1df2c
