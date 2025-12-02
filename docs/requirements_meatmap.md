@@ -474,7 +474,9 @@
       - もつ焼き「https://www.irasutoya.com/2018/01/blog-post_683.html」
       - 中国「https://www.irasutoya.com/2013/07/blog-post_1944.html」
       - 韓国「https://www.irasutoya.com/2020/09/blog-post_89.html」
-      - クラスタ「https://www.irasutoya.com/2013/02/blog-post_3383.html」
+      - クラスタ・その他「https://www.irasutoya.com/2013/02/blog-post_3383.html」
+
+    - 肉食系男子「https://www.irasutoya.com/2014/07/blog-post_8245.html」
 
   
   codex resume 019ad7c6-7892-7760-ae49-cf1a48e1df2c

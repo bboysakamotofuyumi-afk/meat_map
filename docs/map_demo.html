@@ -127,30 +127,30 @@
     .theme-container {
       margin-left: auto;
     }
-    .meat-cluster {
-      background: radial-gradient(circle at 30% 30%, #fecaca, #b91c1c);
-      border-radius: 999px;
-      color: #f9fafb;
-      border: 2px solid #fee2e2;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+    .cluster-icon {
+      position: relative;
+      width: 64px;
+      height: 64px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 700;
-      font-size: 13px;
     }
-    .meat-cluster-inner {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      padding: 4px 8px;
+    .cluster-icon img {
+      width: 64px;
+      height: 64px;
+      display: block;
     }
-    .meat-cluster-meat {
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      background: conic-gradient(from 140deg, #fecaca, #b91c1c, #fecaca);
-      border: 1px solid rgba(248, 250, 252, 0.7);
+    .cluster-icon-count {
+      position: absolute;
+      bottom: 6px;
+      right: 6px;
+      background: rgba(255, 255, 255, 0.9);
+      color: #111827;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-size: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.35);
     }
     .search-bar {
       display: flex;
@@ -500,9 +500,9 @@
       iconCreateFunction: (cl) => {
         const count = cl.getChildCount();
         return L.divIcon({
-          html: `<div class="meat-cluster-inner"><span class="meat-cluster-meat"></span><span>${count}</span></div>`,
-          className: "meat-cluster",
-          iconSize: [40, 40],
+          html: `<div class="cluster-icon"><img src="./assets/pins/cluster.png" alt="cluster"/><span class="cluster-icon-count">${count}</span></div>`,
+          className: "",
+          iconSize: [64, 64],
         });
       },
     });
@@ -668,10 +668,22 @@
       currentSuggestions = [];
     }
 
-    function iconForRank() {
-      // 共通のステーキ画像ピン（いらすとや素材）
+    const genreIcons = {
+      "焼肉": "./assets/pins/yakiniku.png",
+      "ステーキ": "./assets/pins/steak.png",
+      "シュラスコ": "./assets/pins/churrasco.png",
+      "もつ焼き": "./assets/pins/yakiniku.png",
+      "焼き鳥": "./assets/pins/yakitori.png",
+      "しゃぶしゃぶ": "./assets/pins/shabushabu.png",
+      "韓国": "./assets/pins/korea.png",
+      "中華": "./assets/pins/china.png",
+    };
+
+    function iconForRow(row) {
+      const genreText = (row.genre || "").trim();
+      const iconUrl = genreIcons[genreText] || "./assets/pins/steak.png";
       return L.icon({
-        iconUrl: "./assets/pins/steak.png",
+        iconUrl,
         iconSize: [48, 48],
         iconAnchor: [24, 44],
         popupAnchor: [0, -36],
@@ -724,7 +736,7 @@
       if (genreText) {
         allGenreCounts.set(genreText, (allGenreCounts.get(genreText) || 0) + 1);
       }
-      const marker = L.marker([lat, lng], { icon: iconForRank(rank), rank });
+          const marker = L.marker([lat, lng], { icon: iconForRow(row), rank });
       marker.rank = rank;
       marker.meta = {
         name: row.name || "",
@@ -877,7 +889,7 @@
             if (genreText) {
               allGenreCounts.set(genreText, (allGenreCounts.get(genreText) || 0) + 1);
             }
-            const marker = L.marker([lat, lng], { icon: iconForRank(rank), rank });
+      const marker = L.marker([lat, lng], { icon: iconForRow(row), rank });
             marker.rank = rank; // keep rank on instance for filtering/legend
             marker.meta = {
               name: row.name || "",
