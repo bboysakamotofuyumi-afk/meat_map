@@ -573,7 +573,8 @@
 
     function focusOnMarker(marker) {
       if (!marker) return;
-      map.setView(marker.getLatLng(), 16);
+      const targetZoom = Math.max(map.getZoom(), 17);
+      map.setView(marker.getLatLng(), targetZoom);
       marker.openPopup();
     }
 
