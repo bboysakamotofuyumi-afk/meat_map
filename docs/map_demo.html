@@ -1010,7 +1010,6 @@
       const layer = tileLayers[theme] || tileLayers.light;
       layer.addTo(map);
     });
-    map.on("moveend", applyFilter);
     loadCsv();
 
     function populateGenreOptionsFromCounts(genreCounts) {
