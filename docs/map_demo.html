@@ -192,7 +192,7 @@
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 10px;
       box-shadow: 0 12px 36px rgba(0,0,0,0.45);
-      z-index: 1500;
+      z-index: 2001;
       display: none;
       max-height: 280px;
       overflow-y: auto;
@@ -392,6 +392,10 @@
         <div class="lp-card">
           <h2>このマップについて</h2>
           <p>ホットペッパーなどから取得した「肉料理が強い店」をカーニボアスコアでランク付けし、マップ表示しています。</p>
+          <div class="meta-row">
+            <div class="pill">最終更新: <span id="updated-secondary">-</span></div>
+            <div class="pill">件数: <span id="count-secondary">-</span></div>
+          </div>
           <ul>
             <li>対象エリア: 東京都（23区＋多摩）</li>
             <li>対象カテゴリ: 焼肉 / ホルモン / ステーキ / シュラスコ / ジビエ など肉メインの飲食店</li>
@@ -400,20 +404,10 @@
           </ul>
         </div>
         <div class="lp-card">
-          <h2>データ更新</h2>
-          <p>マップで利用する店舗データは、あらかじめ生成したCSVを読み込んで表示しています。</p>
-          <div class="meta-row">
-            <div class="pill">最終更新: <span id="updated-secondary">-</span></div>
-            <div class="pill">件数: <span id="count-secondary">-</span></div>
-          </div>
-          <p>ネットワークが利用できる環境で <code>python -m meatmap.cli --output output/meatmap.csv --copy-to-docs</code> を実行すると最新データを再生成できます。</p>
-        </div>
-        <div class="lp-card">
           <h2>利用上の注意</h2>
           <ul>
             <li>営業時間・住所・閉店情報は変わる場合があります。来店前に公式情報をご確認ください。</li>
             <li>位置情報はブラウザ内でのみ使用し、サーバーには送信しません。</li>
-            <li>マップ表示やCSV取得に失敗した場合はパス（クエリ）を確認し、時間をおいて再度アクセスしてください。</li>
           </ul>
         </div>
       </div>
