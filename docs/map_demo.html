@@ -467,16 +467,10 @@
       csvUrl = `/${rawCsv.replace(/^\.?\//, "")}`;
     }
     const rankColors = { S: "#e11d48", A: "#f97316", B: "#0ea5e9", C: "#94a3b8" };
-    const tokyoBounds = L.latLngBounds(
-      [35.4, 139.2],
-      [35.9, 139.95]
-    );
     const map = L.map("map", {
       center: [35.681236, 139.767125],
       zoom: 11,
       preferCanvas: true,
-      maxBounds: tokyoBounds,
-      maxBoundsViscosity: 0.8,
     });
     const tileLayers = {
       light: L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
