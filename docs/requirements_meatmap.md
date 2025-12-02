@@ -404,8 +404,7 @@
 
 
 ### map UI 改善ポイント
-- ogp.png
-  - リアルな肉の絵と「MEAT MAP」という文字を合わせたのものにしたい
+
 - 
   - 「Tokyo Carnivore Meat Map (Leaflet Demo)」という文字列は不要
   - 「CSV:/output/meatmap.csv」という文字列も不要
@@ -471,12 +470,16 @@
       - 焼肉「https://www.irasutoya.com/2020/03/blog-post_2.html」
       - 焼き鳥「https://www.irasutoya.com/2013/11/blog-post_535.html」
       - しゃぶしゃぶ「https://www.irasutoya.com/2013/01/blog-post_702.html」
-      - もつ焼き「https://www.irasutoya.com/2018/01/blog-post_683.html」
+      - もつ焼き「https://www.irasutoya.com/2016/03/blog-post_509.html」
       - 中国「https://www.irasutoya.com/2013/07/blog-post_1944.html」
       - 韓国「https://www.irasutoya.com/2020/09/blog-post_89.html」
       - クラスタ・その他「https://www.irasutoya.com/2013/02/blog-post_3383.html」
 
-    - 肉食系男子「https://www.irasutoya.com/2014/07/blog-post_8245.html」
+
+  - ogp.png
+    - 以下の画像を横並びにしてその上から大きく「MEAT MAP」という文字を重ねたものにしたい
+      - 肉食系男子「https://www.irasutoya.com/2014/07/blog-post_8245.html」
+      - 肉食系女子「https://www.irasutoya.com/2014/07/blog-post_3616.html」
 
   
   codex resume 019ad7c6-7892-7760-ae49-cf1a48e1df2c
