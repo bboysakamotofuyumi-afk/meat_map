@@ -158,7 +158,7 @@
     }
     .search-bar {
       display: flex;
-      flex-wrap: nowrap;
+      flex-wrap: wrap;
       gap: 6px;
       align-items: center;
       width: auto;
@@ -167,6 +167,12 @@
       border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 10px;
       padding: 4px 6px;
+    }
+    .search-actions {
+      display: flex;
+      gap: 6px;
+      flex: 0 0 auto;
+      align-items: center;
     }
     .search-bar input {
       flex: 1;
@@ -366,8 +372,10 @@
           <div class="search-bar">
             <span class="search-label">住所で移動 / 店名</span>
             <input id="geocode-input" type="search" placeholder="例: 渋谷駅 / 店名">
-            <button id="geocode-button" class="control-button" type="button">検索</button>
-            <button id="geo-button" class="control-button" type="button">現在地</button>
+            <div class="search-actions">
+              <button id="geocode-button" class="control-button" type="button">検索</button>
+              <button id="geo-button" class="control-button" type="button">現在地</button>
+            </div>
           </div>
           <div id="search-suggestions" class="search-suggestions"></div>
         </div>
