@@ -682,15 +682,20 @@
       "焼肉": "./assets/pins/yakiniku.png",
       "ステーキ": "./assets/pins/steak.png",
       "シュラスコ": "./assets/pins/churrasco.png",
-      "もつ焼き": "./assets/pins/motsuyaki.png",
-      "焼き鳥": "./assets/pins/yakitori.png",
+      "焼き鳥・もつ焼き": "./assets/pins/yakitori.png",
       "しゃぶしゃぶ": "./assets/pins/shabushabu.png",
       "韓国": "./assets/pins/korea.png",
       "中華": "./assets/pins/china.png",
     };
 
+    function normalizeGenreText(genre) {
+      const g = (genre || "").trim();
+      if (/焼き鳥|もつ焼き/.test(g)) return "焼き鳥・もつ焼き";
+      return g;
+    }
+
     function iconForRow(row) {
-      const genreText = (row.genre || "").trim();
+      const genreText = normalizeGenreText(row.genre || "");
       const iconUrl = genreIcons[genreText] || "./assets/pins/steak.png";
       return L.icon({
         iconUrl,
@@ -707,7 +712,8 @@
       const rankBadge = row.carnivore_rank
         ? `<span class="rank-badge" style="background:${rankColors[row.carnivore_rank] || "#cbd5e1"}">${row.carnivore_rank}</span>`
         : "";
-      const genres = row.genre ? `<div style="color:#cbd5e1; margin-top:4px;">${row.genre}</div>` : "";
+      const normalizedGenre = normalizeGenreText(row.genre || "");
+      const genres = normalizedGenre ? `<div style="color:#cbd5e1; margin-top:4px;">${normalizedGenre}</div>` : "";
       const reviewBadge = row.review_count
         ? `<span style="display:inline-block; background:rgba(255,255,255,0.08); color:#cbd5e1; padding:4px 8px; border-radius:8px; font-size:12px;">${rating || "未評価"}</span>`
         : "";
@@ -745,7 +751,7 @@
       rankTotals[rank] = (rankTotals[rank] || 0) + 1;
       row.lat = lat;
       row.lng = lng;
-      const genreText = (row.genre || "").trim();
+      const genreText = normalizeGenreText(row.genre || "");
       if (genreText) {
         allGenreCounts.set(genreText, (allGenreCounts.get(genreText) || 0) + 1);
       }
@@ -898,7 +904,7 @@
           if (Number.isFinite(lat) && Number.isFinite(lng) && inTokyoBounds(lat, lng)) {
             const rank = row.carnivore_rank || "C";
             rankTotals[rank] = (rankTotals[rank] || 0) + 1;
-            const genreText = (row.genre || "").trim();
+            const genreText = normalizeGenreText(row.genre || "");
             if (genreText) {
               allGenreCounts.set(genreText, (allGenreCounts.get(genreText) || 0) + 1);
             }
