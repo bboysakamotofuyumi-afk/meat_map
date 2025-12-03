@@ -39,13 +39,10 @@ HEADERS = {
 }
 
 # キーワードと優先順位（上にあるほど優先）
+# ※再分類先は「シュラスコ」「韓国」「その他」に限定する
 GENRE_RULES: List[Tuple[str, List[str]]] = [
     ("シュラスコ", ["シュラスコ", "churrasco", "バーベキュー"]),
-    ("韓国", ["韓国", "サムギョプサル", "チゲ", "キムチ", "プルコギ", "タッカルビ", "コリアン"]),
-    ("焼き鳥・もつ焼き", ["焼き鳥", "やきとり", "Yakitori", "もつ焼", "やきとん", "ホルモン"]),
-    ("焼肉", ["焼肉", "焼き肉", " yakiniku ", "ホルモン"]),
-    ("ステーキ", ["ステーキ", "steak", "ハンバーグ", "グリル", "肉バル"]),
-    ("中華", ["中華", "中華料理", "餃子", "麻婆", "刀削麺"]),
+    ("韓国", ["韓国", "コリアン", "サムギョプサル", "チゲ", "キムチ", "プルコギ", "タッカルビ"]),
 ]
 
 
@@ -172,7 +169,9 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     targets: List[int] = []
     for idx, row in enumerate(rows):
-        if (row.get("carnivore_rank") or "").strip() != "C":
+        rank = (row.get("carnivore_rank") or "").strip()
+        # ランクが C または 空欄のみ対象
+        if rank not in {"C", ""}:
             continue
         genre = (row.get("genre") or "").strip()
         if genre not in TARGET_GENRES:
@@ -230,13 +229,9 @@ def main(argv: Optional[List[str]] = None) -> int:
 
         new_genre = guess_genre_from_text(text)
         if not new_genre:
-            # tabelog限定かつ Cランク/対象ジャンルのみ -> ヒットしない場合は「その他」に寄せる
-            if args.tabelog_only:
-                new_genre = "その他"
-                print(f"[fallback] no keyword match for {name}; force -> その他")
-            else:
-                print(f"[skip] no keyword match for {name}")
-                continue
+            # ヒットしない場合は「その他」に寄せる（再分類先を限定するため）
+            new_genre = "その他"
+            print(f"[fallback] no keyword match for {name}; force -> その他")
 
         old_genre = (row.get("genre") or "").strip()
         if old_genre == new_genre:
