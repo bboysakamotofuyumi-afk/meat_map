@@ -1,0 +1,3 @@
+# extracted_at_utc=2025-12-03T01:16:06.039181+00:00
+# condition=lng<136.9 (west of Nagoya)
+name,address,lat,lng,carnivore_rank,carnivore_score,genre,rating,review_count,sources,url,notes

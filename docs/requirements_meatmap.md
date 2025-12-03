@@ -481,5 +481,8 @@
       - 肉食系男子「https://www.irasutoya.com/2014/07/blog-post_8245.html」
       - 肉食系女子「https://www.irasutoya.com/2014/07/blog-post_3616.html」
 
-  
-  
+  - 検索窓が横長すぎる
+    - 今の70パーセントくらいの長さでOK
+  - "クラスタの"ピンのみサイズが大きすぎる。現在の相似比0.8くらいでいい
+
+     codex resume 019ad7c6-7892-7760-ae49-cf1a48e1df2c

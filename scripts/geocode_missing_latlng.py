@@ -1,16 +1,12 @@
 #!/usr/bin/env python3
 """
 docs/output/meatmap.csv の欠損している緯度経度を
-Nominatim で補完するバッチスクリプト。
+GSI 住所検索 API で補完するバッチスクリプト。
 
 - 対象: lat / lng が空 or 数値でない行
-- キー: 住所を NFKC 正規化 + 空白除去 + 小文字化したもの
-- 同一住所は 1 回だけジオコーディングし、結果を再利用
-- キャッシュ: docs/output/geocode_cache.json に保存
-
-注意:
-- Nominatim の利用規約に従い、過剰なリクエストを避けること
-- デフォルトでは --max-requests 300 件まで / 実行
+- 住所を「丁目・番地」まで丸めて検索し、ヒットしない場合は「店名 + 住所」でも検索
+- 同一クエリはキャッシュを使い回す (docs/output/geocode_cache_gsi.json)
+- 実行ごとに API リクエスト上限を指定できる (--max-requests)
 """
 
 from __future__ import annotations
@@ -19,27 +15,77 @@ import argparse
 import csv
 import json
 import math
-import os
+import re
 import sys
 import time
 import unicodedata
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Optional, Tuple
 
 import requests
 
 
 ROOT = Path(__file__).resolve().parents[1]
 CSV_PATH = ROOT / "docs" / "output" / "meatmap.csv"
-CACHE_PATH = ROOT / "docs" / "output" / "geocode_cache.json"
+CACHE_PATH = ROOT / "docs" / "output" / "geocode_cache_gsi.json"
+
+PREFS = [
+    "北海道",
+    "青森県",
+    "岩手県",
+    "宮城県",
+    "秋田県",
+    "山形県",
+    "福島県",
+    "茨城県",
+    "栃木県",
+    "群馬県",
+    "埼玉県",
+    "千葉県",
+    "東京都",
+    "神奈川県",
+    "新潟県",
+    "富山県",
+    "石川県",
+    "福井県",
+    "山梨県",
+    "長野県",
+    "岐阜県",
+    "静岡県",
+    "愛知県",
+    "三重県",
+    "滋賀県",
+    "京都府",
+    "大阪府",
+    "兵庫県",
+    "奈良県",
+    "和歌山県",
+    "鳥取県",
+    "島根県",
+    "岡山県",
+    "広島県",
+    "山口県",
+    "徳島県",
+    "香川県",
+    "愛媛県",
+    "高知県",
+    "福岡県",
+    "佐賀県",
+    "長崎県",
+    "熊本県",
+    "大分県",
+    "宮崎県",
+    "鹿児島県",
+    "沖縄県",
+]
 
 
-def normalize_address(address: str) -> str:
-    """住所文字列をキャッシュキー用に正規化する（キャッシュキー用）。"""
-    if address is None:
+def normalize_text(value: str) -> str:
+    """NFKC + 空白除去 + 小文字化（キャッシュキー用）。"""
+    if value is None:
         return ""
-    s = unicodedata.normalize("NFKC", str(address))
-    # 半角/全角スペースを除去
+    s = unicodedata.normalize("NFKC", str(value))
     s = "".join(ch for ch in s if ch not in {" ", "\u3000"})
     return s.lower().strip()
 
@@ -52,25 +98,25 @@ def simplify_address_for_geocode(address: str) -> str:
       - 東京都 港区 六本木 6-10-1 六本木ヒルズ ウェストウォーク 5F
         -> 東京都 港区 六本木 6-10-1
     """
-    import re
-
     if not address:
         return ""
     s = unicodedata.normalize("NFKC", str(address))
-    # 空白を統一
     s = re.sub(r"[\\s\u3000]+", " ", s).strip()
     tokens = s.split(" ")
-    if not tokens:
-        return s
-    # 「数字とハイフンのみ」で構成される最後のトークンを番地として扱う
     last_idx = -1
     for i, t in enumerate(tokens):
         if re.fullmatch(r"[0-9]+(?:-[0-9]+)*", t):
             last_idx = i
     if last_idx >= 0:
         return " ".join(tokens[: last_idx + 1])
-    # 番地らしきトークンがなければ元の住所をそのまま返す
     return s
+
+
+def extract_prefecture(address: str) -> Optional[str]:
+    for pref in PREFS:
+        if pref in address:
+            return pref
+    return None
 
 
 def load_csv(path: Path) -> Tuple[List[str], List[Dict[str, str]]]:
@@ -111,13 +157,9 @@ def save_cache(path: Path, cache: Dict[str, Dict[str, float]]) -> None:
 
 def build_session() -> requests.Session:
     session = requests.Session()
-    email = os.getenv("NOMINATIM_EMAIL", "").strip()
-    ua = "meat_map_geocoder/1.0"
-    if email:
-        ua += f" ({email})"
     session.headers.update(
         {
-            "User-Agent": ua,
+            "User-Agent": "meat_map_geocoder_gsi/1.0",
             "Accept-Language": "ja",
         }
     )
@@ -137,7 +179,7 @@ def collect_missing_addresses(
     """
     緯度経度が欠損している行から、住所ごとにインデックスをまとめる。
 
-    戻り値: {normalized_address: {\"address\": str, \"indices\": [int, ...]}}
+    戻り値: {normalized_address: {"address": str, "query_address": str, "names": set, "indices": [int, ...]}}
     """
     result: Dict[str, Dict[str, object]] = {}
     for idx, row in enumerate(rows):
@@ -146,63 +188,120 @@ def collect_missing_addresses(
         if math.isfinite(lat) and math.isfinite(lng):
             continue
         raw_address = (row.get("address") or "").strip()
+        name = (row.get("name") or "").strip()
         if not raw_address:
             continue
         query_address = simplify_address_for_geocode(raw_address)
         if not query_address:
             continue
-        key = normalize_address(query_address)
+        key = normalize_text(query_address)
         if not key:
             continue
         entry = result.setdefault(
             key,
-            {"address": raw_address, "query_address": query_address, "indices": []},
+            {"address": raw_address, "query_address": query_address, "names": set(), "indices": []},
         )
         indices: List[int] = entry["indices"]  # type: ignore[assignment]
         indices.append(idx)
+        names: set[str] = entry["names"]  # type: ignore[assignment]
+        if name:
+            names.add(name)
     return result
 
 
-def geocode_address(session: requests.Session, address: str) -> Optional[Tuple[float, float]]:
-    url = "https://nominatim.openstreetmap.org/search"
-    params = {
-        "format": "json",
-        "limit": 1,
-        "countrycodes": "jp",
-        "q": address,
-    }
+def build_queries(name: str, address: str) -> List[str]:
+    trimmed = simplify_address_for_geocode(address)
+    queries: List[str] = []
+    if trimmed:
+        queries.append(trimmed)
+    if name and trimmed:
+        queries.append(f"{name} {trimmed}")
+    if address:
+        queries.append(address)
+    if name:
+        queries.append(name)
+    seen = set()
+    unique: List[str] = []
+    for q in queries:
+        k = normalize_text(q)
+        if not k or k in seen:
+            continue
+        seen.add(k)
+        unique.append(q)
+    return unique
+
+
+def geocode_gsi(
+    session: requests.Session,
+    query: str,
+    prefect_hint: Optional[str],
+    cache: Dict[str, Dict[str, float]],
+    state: Dict[str, int],
+    max_requests: int,
+    delay: float,
+) -> Optional[Tuple[float, float]]:
+    key = normalize_text(query)
+    if key in cache:
+        hit = cache[key]
+        lat = parse_float(hit.get("lat"))
+        lng = parse_float(hit.get("lng"))
+        if math.isfinite(lat) and math.isfinite(lng):
+            return lat, lng
+
+    if state["new_requests"] >= max_requests:
+        return None
+
+    url = "https://msearch.gsi.go.jp/address-search/AddressSearch"
     try:
-        res = session.get(url, params=params, timeout=20)
+        res = session.get(url, params={"q": query}, timeout=15)
+        state["new_requests"] += 1
+        if delay > 0:
+            time.sleep(delay)
         if not res.ok:
-            print(f"[warn] HTTP {res.status_code} for address: {address}", file=sys.stderr)
+            print(f"[warn] HTTP {res.status_code} for query: {query}", file=sys.stderr)
             return None
         data = res.json()
-        if not data:
-            return None
-        hit = data[0]
-        lat = parse_float(hit.get("lat"))
-        lon = parse_float(hit.get("lon"))
-        if not (math.isfinite(lat) and math.isfinite(lon)):
-            return None
-        return lat, lon
     except Exception as exc:  # noqa: BLE001
-        print(f"[warn] geocode error for '{address}': {exc}", file=sys.stderr)
+        print(f"[warn] request failed for '{query}': {exc}", file=sys.stderr)
         return None
+
+    candidates: List[Tuple[float, float, str]] = []
+    for item in data:
+        coords = item.get("geometry", {}).get("coordinates") or []
+        if len(coords) < 2:
+            continue
+        lng, lat = coords[0], coords[1]
+        title = item.get("properties", {}).get("title", "")
+        candidates.append((lat, lng, title))
+    if not candidates:
+        return None
+
+    def pick_candidate() -> Tuple[float, float]:
+        if prefect_hint:
+            for lat, lng, title in candidates:
+                if prefect_hint in title:
+                    return lat, lng
+        lat, lng, _ = candidates[0]
+        return lat, lng
+
+    lat, lng = pick_candidate()
+    cache[key] = {"lat": lat, "lng": lng}
+    return lat, lng
 
 
 def main(argv: Optional[List[str]] = None) -> int:
-    parser = argparse.ArgumentParser(description="Fill missing lat/lng in meatmap.csv via Nominatim")
+    parser = argparse.ArgumentParser(description="Fill missing lat/lng in meatmap.csv via GSI AddressSearch")
     parser.add_argument(
         "--max-requests",
         type=int,
-        default=300,
-        help="この実行で新規に投げる Nominatim リクエストの最大数 (default: 300)",
+        default=250,
+        help="この実行で新規に投げる GSI 住所検索リクエストの最大数 (default: 250)",
     )
     parser.add_argument(
         "--delay",
         type=float,
-        default=1.1,
-        help="Nominatim リクエスト間のスリープ秒数 (default: 1.1)",
+        default=0.2,
+        help="API リクエスト間のスリープ秒数 (default: 0.2)",
     )
     parser.add_argument(
         "--dry-run",
@@ -221,56 +320,56 @@ def main(argv: Optional[List[str]] = None) -> int:
     print(f"unique addresses to consider: {len(addr_map)}")
 
     session = build_session()
-    new_requests = 0
+    state = {"new_requests": 0}
 
-    # まずキャッシュにあるものだけで緯度経度を埋める
     updated_from_cache = 0
-    for key, entry in addr_map.items():
-        cached = cache.get(key)
-        if not cached:
-            continue
-        lat = parse_float(cached.get("lat"))
-        lng = parse_float(cached.get("lng"))
-        if not (math.isfinite(lat) and math.isfinite(lng)):
-            continue
-        for idx in entry["indices"]:  # type: ignore[index]
-            row = rows[idx]
-            if not (math.isfinite(parse_float(row.get("lat"))) and math.isfinite(parse_float(row.get("lng")))):
-                row["lat"] = str(lat)
-                row["lng"] = str(lng)
-                updated_from_cache += 1
-
-    print(f"updated rows from cache: {updated_from_cache}")
-
-    # キャッシュにない住所だけジオコーディング
     updated_from_api = 0
+
     for key, entry in addr_map.items():
-        if key in cache:
+        names: set[str] = entry["names"]  # type: ignore[assignment]
+        name = next(iter(names)) if names else ""
+        address = entry.get("query_address") or entry.get("address") or ""  # type: ignore[assignment]
+        prefect_hint = extract_prefecture(str(entry.get("address") or ""))
+        queries = build_queries(name, str(address))
+
+        latlng: Optional[Tuple[float, float]] = None
+        hit_from_cache = False
+
+        for q in queries:
+            before = state["new_requests"]
+            latlng = geocode_gsi(
+                session=session,
+                query=q,
+                prefect_hint=prefect_hint,
+                cache=cache,
+                state=state,
+                max_requests=args.max_requests,
+                delay=args.delay,
+            )
+            if latlng:
+                hit_from_cache = state["new_requests"] == before
+                break
+
+        if not latlng:
+            print(f"[skip] no result for: {name} / {address}")
             continue
-        if new_requests >= args.max_requests:
-            break
-        display_address = entry["address"]  # type: ignore[assignment]
-        query_address = entry.get("query_address") or display_address  # type: ignore[assignment]
-        print(f"[{new_requests+1}/{args.max_requests}] geocoding: {display_address} -> {query_address}")
-        coords = geocode_address(session, str(query_address))
-        new_requests += 1
-        if coords is None:
-            # 解決できなかった住所はキャッシュに「失敗」として記録し、
-            # 次回以降の実行で同じ住所を再試行しないようにする。
-            cache[key] = {"lat": None, "lng": None}
-            time.sleep(args.delay)
-            continue
-        lat, lng = coords
-        cache[key] = {"lat": lat, "lng": lng}
+
+        lat, lng = latlng
         for idx in entry["indices"]:  # type: ignore[index]
             row = rows[idx]
-            if not (math.isfinite(parse_float(row.get("lat"))) and math.isfinite(parse_float(row.get("lng")))):
-                row["lat"] = str(lat)
-                row["lng"] = str(lng)
+            if math.isfinite(parse_float(row.get("lat"))) and math.isfinite(parse_float(row.get("lng"))):
+                continue
+            row["lat"] = f"{lat:.7f}"
+            row["lng"] = f"{lng:.7f}"
+            if hit_from_cache:
+                updated_from_cache += 1
+            else:
                 updated_from_api += 1
-        time.sleep(args.delay)
+        source = "cache" if hit_from_cache else "api"
+        print(f"[ok/{source}] {name} -> {lat:.7f}, {lng:.7f}")
 
-    print(f"new API requests sent: {new_requests}")
+    print(f"new API requests sent: {state['new_requests']}")
+    print(f"updated rows from cache: {updated_from_cache}")
     print(f"updated rows from API: {updated_from_api}")
 
     if args.dry_run:
@@ -279,14 +378,12 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     save_cache(CACHE_PATH, cache)
 
-    backup_path = CSV_PATH.with_suffix(".csv.pre_geocode.bak")
+    backup_path = CSV_PATH.with_suffix(".csv.pre_geocode_gsi.bak")
     if not backup_path.exists():
         CSV_PATH.replace(backup_path)
         print(f"backup created: {backup_path}")
     else:
         print(f"backup already exists: {backup_path}")
-
-    from datetime import datetime, timezone
 
     with CSV_PATH.open("w", encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
