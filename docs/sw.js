@@ -1,4 +1,4 @@
-const CACHE_NAME = "tmm-cache-v1";
+const CACHE_NAME = "tmm-cache-v2";
 const ASSETS = [
   "./map_demo.html",
   "./manifest.webmanifest",
@@ -15,8 +15,7 @@ const ASSETS = [
   "./assets/pins/korea.png",
   "./assets/pins/china.png",
   "./assets/pins/cluster.png",
-  "./assets/pins/motsuyaki.png",
-  "./output/meatmap.csv"
+  "./assets/pins/motsuyaki.png"
 ];
 
 self.addEventListener("install", (event) => {
@@ -36,6 +35,23 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET") return;
+  const url = new URL(req.url);
+  const isCsv = url.pathname.endsWith("/meatmap.csv");
+
+  if (isCsv) {
+    // CSV は常にネットワーク優先で最新を取得し、失敗時だけキャッシュを使う
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(req, clone)).catch(() => {});
+          return res;
+        })
+        .catch(() => caches.match(req))
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(req).then((cached) => {
       if (cached) return cached;
