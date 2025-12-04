@@ -27,7 +27,7 @@
 - レスポンス件数が多い場合でもページサイズは調整済み（HotPepper はジャンル30件/キーワード20件単位で取得）。
 
 ## LP 追記（map_demo.html）
-- OGPメタ（title/description/OG:image）を追加。`og:image` は `docs/ogp.png?v=20251129` を指定（キャッシュ回避用のバージョン付き）。
+- OGPメタ（title/description/OG:image）を追加。`og:image` は `docs/ogp.png?v=20251204` を指定（キャッシュ回避用のバージョン付き）。
 - 「このマップについて / データ更新 / 利用上の注意」のLPセクションを追加。
 - 広告枠プレースホルダー、支援ボタン（Ko-fi / BuyMeACoffee 想定）、シェアボタン（X/Facebook）を配置。
 - フッターにプライバシーポリシー・利用規約へのリンクを追加。

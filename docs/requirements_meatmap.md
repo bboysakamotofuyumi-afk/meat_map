@@ -400,7 +400,7 @@
 - `og:description` 案:
   - `東京都内の肉料理店を、独自スコアでランク付けして地図表示。焼肉・ステーキ・肉バルなど、ガッツリ肉が食べたいときのための非公式マップです。`
 - `og:image`:
-  - `https://genkishimura2000.github.io/meat_map/ogp.png?v=20251129` を指定（GitHub Pages 本番 URL にあわせて要調整）。
+  - `https://genkishimura2000.github.io/meat_map/ogp.png?v=20251204` を指定（GitHub Pages 本番 URL にあわせて要調整）。
 
 
 ### map UI 改善ポイント
@@ -484,6 +484,5 @@
   - 検索窓が横長すぎる
     - 今の70パーセントくらいの長さでOK
   - "クラスタの"ピンのみサイズが大きすぎる。現在の相似比0.8くらいでいい
-
 
 
