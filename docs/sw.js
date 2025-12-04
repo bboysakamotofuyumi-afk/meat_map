@@ -1,4 +1,4 @@
-const CACHE_NAME = "tmm-cache-v2";
+const CACHE_NAME = "tmm-cache-v3";
 const ASSETS = [
   "./map_demo.html",
   "./manifest.webmanifest",
