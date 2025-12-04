@@ -396,58 +396,22 @@
     <div class="lp-container">
       <div class="lp-headline">
         <div>
-          <div class="lp-title">TOKYO MEAT MAP</div>
-          <div class="pill">東京都 / 肉料理店マップ（S/A 公開中・B/C は今後拡張予定）</div>
+          <div class="lp-title">MEAT MAP</div>
+          <div class="pill">東京都 / 肉料理店マップ</div>
         </div>
       </div>
 
       <div class="lp-grid">
         <div class="lp-card">
           <h2>このマップについて</h2>
-          <p>ホットペッパーなどから取得した「肉料理が強い店」をカーニボアスコアでランク付けし、マップ表示しています。</p>
           <div class="meta-row">
             <div class="pill">最終更新: <span id="updated-secondary">-</span></div>
             <div class="pill">件数: <span id="count-secondary">-</span></div>
           </div>
           <ul>
-            <li>対象エリア: 東京都（23区＋多摩）</li>
-            <li>対象カテゴリ: 焼肉 / ホルモン / ステーキ / シュラスコ / ジビエ など肉メインの飲食店</li>
-            <li>現在は S/A ランク中心を公開（B/C は更新環境が整い次第拡張）</li>
-            <li>地図機能: 検索・ジャンル絞り込み・並び替え・住所検索・現在地表示をサポート</li>
             <li>営業時間・住所・閉店情報は変わる場合があります。来店前に公式情報をご確認ください。</li>
             <li>位置情報はブラウザ内でのみ使用し、サーバーには送信しません。</li>
           </ul>
-        </div>
-      </div>
-
-      <div class="lp-grid">
-        <div class="lp-card">
-          <h3>広告枠（準備中）</h3>
-          <div class="ad-slot">AdSense 審査後に差し替え予定</div>
-          <p>上部ヘッダーや本文内に広告を配置する想定です。審査通過後にコードをここへ挿入してください。</p>
-        </div>
-        <div class="lp-card">
-          <h3>開発者を支援する</h3>
-          <p>マップが役に立ったら、コーヒー1杯分のサポートをお願いします。</p>
-          <a id="support-link" class="support-button" href="https://buymeacoffee.com/yourname" target="_blank" rel="noopener">BuyMeACoffee で支援</a>
-          <div style="margin-top:8px; color: var(--muted); font-size: 13px;">※ yourname を実アカウントに差し替えてください</div>
-        </div>
-        <div class="lp-card">
-          <h3>シェアする</h3>
-          <p>SNSで共有してもらえると励みになります。</p>
-          <div class="share-buttons">
-            <a id="share-x" href="#" target="_blank" rel="noopener">X でシェア</a>
-            <a id="share-fb" href="#" target="_blank" rel="noopener">Facebook でシェア</a>
-          </div>
-        </div>
-        <div class="lp-card">
-          <h3>運営情報・問い合わせ</h3>
-          <ul>
-            <li>運営: TOKYO MEAT MAP（個人開発）</li>
-            <li>問い合わせ: <a id="contact-link" href="https://github.com/genkishimura2000/meat_map/issues" target="_blank" rel="noopener">GitHub Issues</a> / メール（追記してください）</li>
-            <li>ポリシー: <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a> / <a href="terms.html" target="_blank" rel="noopener">利用規約</a></li>
-          </ul>
-          <p>メールアドレスを公開する場合はスパム対策を行い、<code>mailto:</code> リンクを差し込んでください。</p>
         </div>
       </div>
 
@@ -455,7 +419,7 @@
         <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a>
         <a href="terms.html" target="_blank" rel="noopener">利用規約 / 免責</a>
         <a href="concept.html" target="_blank" rel="noopener">サイト概要・コンセプト</a>
-        <span>お問い合わせ: GitHub Issues またはメールを追記</span>
+        <a href="https://github.com/genkishimura2000/meat_map/issues" target="_blank" rel="noopener">GitHub Issues</a>
       </div>
     </div>
   </section>
@@ -553,7 +517,7 @@
     let userCircle = null;
     let geocodeMarker = null;
     const shareUrl = location.href.split("#")[0];
-    const shareText = "TOKYO MEAT MAP - 東京都の肉料理店マップ";
+    const shareText = "MEAT MAP - 東京都の肉料理店マップ";
     const trackEvent = (name, params) => {
       if (!window.gtag) return;
       window.gtag("event", name, params || {});
