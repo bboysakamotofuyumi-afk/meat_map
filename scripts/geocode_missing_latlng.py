@@ -175,9 +175,12 @@ def parse_float(value: str) -> float:
 
 def collect_missing_addresses(
     rows: List[Dict[str, str]],
+    include_existing: bool = False,
+    sources_filter: Optional[str] = None,
 ) -> Dict[str, Dict[str, object]]:
     """
-    緯度経度が欠損している行から、住所ごとにインデックスをまとめる。
+    対象となる行（欠損、もしくは include_existing=True のとき既存値を含む）を
+    住所ごとにインデックスでまとめる。
 
     戻り値: {normalized_address: {"address": str, "query_address": str, "names": set, "indices": [int, ...]}}
     """
@@ -185,8 +188,13 @@ def collect_missing_addresses(
     for idx, row in enumerate(rows):
         lat = parse_float(row.get("lat"))
         lng = parse_float(row.get("lng"))
-        if math.isfinite(lat) and math.isfinite(lng):
+        has_latlng = math.isfinite(lat) and math.isfinite(lng)
+        if has_latlng and not include_existing:
             continue
+        if sources_filter:
+            src = (row.get("sources") or "").lower()
+            if sources_filter.lower() not in src:
+                continue
         raw_address = (row.get("address") or "").strip()
         name = (row.get("name") or "").strip()
         if not raw_address:
@@ -308,22 +316,41 @@ def main(argv: Optional[List[str]] = None) -> int:
         action="store_true",
         help="ファイルを書き換えずに、更新対象件数などだけ表示する",
     )
+    parser.add_argument(
+        "--force-all",
+        action="store_true",
+        help="lat/lng が既に入っている行も再ジオコーディング対象に含める",
+    )
+    parser.add_argument(
+        "--sources-filter",
+        type=str,
+        default=None,
+        help="sources にこの文字列を含む行だけを対象にする（例: tabelog）",
+    )
     args = parser.parse_args(argv)
 
     fieldnames, rows = load_csv(CSV_PATH)
     cache = load_cache(CACHE_PATH)
 
-    addr_map = collect_missing_addresses(rows)
-    total_missing_rows = sum(len(entry["indices"]) for entry in addr_map.values())
+    addr_map = collect_missing_addresses(
+        rows,
+        include_existing=args.force_all,
+        sources_filter=args.sources_filter,
+    )
+    total_targets = sum(len(entry["indices"]) for entry in addr_map.values())
     print(f"total rows: {len(rows)}")
-    print(f"rows with missing lat/lng: {total_missing_rows}")
-    print(f"unique addresses to consider: {len(addr_map)}")
+    print(f"target rows: {total_targets} (unique addresses: {len(addr_map)})")
+    if args.sources_filter:
+        print(f"sources filter: {args.sources_filter}")
+    print(f"include existing lat/lng: {args.force_all}")
 
     session = build_session()
     state = {"new_requests": 0}
 
     updated_from_cache = 0
     updated_from_api = 0
+    unchanged_same_value = 0
+    failed = 0
 
     for key, entry in addr_map.items():
         names: set[str] = entry["names"]  # type: ignore[assignment]
@@ -351,13 +378,19 @@ def main(argv: Optional[List[str]] = None) -> int:
                 break
 
         if not latlng:
+            failed += len(entry["indices"])  # type: ignore[arg-type]
             print(f"[skip] no result for: {name} / {address}")
             continue
 
         lat, lng = latlng
         for idx in entry["indices"]:  # type: ignore[index]
             row = rows[idx]
-            if math.isfinite(parse_float(row.get("lat"))) and math.isfinite(parse_float(row.get("lng"))):
+            old_lat = parse_float(row.get("lat"))
+            old_lng = parse_float(row.get("lng"))
+            had_latlng = math.isfinite(old_lat) and math.isfinite(old_lng)
+            # 更新判定
+            if had_latlng and abs(old_lat - lat) < 1e-6 and abs(old_lng - lng) < 1e-6:
+                unchanged_same_value += 1
                 continue
             row["lat"] = f"{lat:.7f}"
             row["lng"] = f"{lng:.7f}"
@@ -371,6 +404,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     print(f"new API requests sent: {state['new_requests']}")
     print(f"updated rows from cache: {updated_from_cache}")
     print(f"updated rows from API: {updated_from_api}")
+    print(f"unchanged (same value): {unchanged_same_value}")
+    print(f"failed (no result): {failed}")
 
     if args.dry_run:
         print("dry-run: not writing CSV / cache")
