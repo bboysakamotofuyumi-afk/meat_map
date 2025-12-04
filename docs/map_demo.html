@@ -4,6 +4,24 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>東京都の肉料理マップ | 焼肉・ステーキを地図で探す</title>
+  <script async src="https://fundingchoicesmessages.google.com/i/pub-9721987325108836?ers=1"></script>
+  <script>
+    (function() {
+      function signalGooglefcPresent() {
+        if (!window.frames['googlefcPresent']) {
+          if (document.body) {
+            const iframe = document.createElement('iframe');
+            iframe.style = 'width:0;height:0;border:0;display:none';
+            iframe.name = 'googlefcPresent';
+            document.body.appendChild(iframe);
+          } else {
+            setTimeout(signalGooglefcPresent, 50);
+          }
+        }
+      }
+      signalGooglefcPresent();
+    })();
+  </script>
   <meta name="description" content="東京都内の焼肉、ステーキなど肉料理店をランク付きでマップ表示。エリア・ジャンル・予算で絞り込み可能な非公式まとめマップです。" />
   <meta property="og:title" content="東京都の肉料理マップ" />
   <meta property="og:description" content="東京都内の肉料理店を、独自スコアでランク付けして地図表示。焼肉・ステーキ・肉バルなど、ガッツリ肉が食べたいときのための非公式マップです。" />
