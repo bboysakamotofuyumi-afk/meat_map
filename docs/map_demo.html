@@ -44,13 +44,13 @@
       --bg: #000000;
       --panel: rgba(255, 255, 255, 0.08);
       --text: #e2e8f0;
-      --accent: #ec4899;
+      --accent: #f9a8d4;
       --muted: #94a3b8;
     }
     * { box-sizing: border-box; }
     body, html {
       margin: 0; padding: 0; width: 100%; height: 100%;
-      background: radial-gradient(circle at 20% 20%, rgba(249, 115, 22, 0.08), transparent 35%),
+      background: radial-gradient(circle at 20% 20%, rgba(249, 168, 212, 0.16), transparent 35%),
                   radial-gradient(circle at 80% 0%, rgba(14, 165, 233, 0.1), transparent 30%),
                   var(--bg);
       color: var(--text);
@@ -160,7 +160,7 @@
       border-radius: 8px;
       font-weight: 700;
       cursor: pointer;
-      box-shadow: 0 6px 20px rgba(236, 72, 153, 0.35);
+      box-shadow: 0 6px 20px rgba(249, 168, 212, 0.35);
     }
     .control-button:active { transform: translateY(1px); }
     .select {
@@ -375,7 +375,7 @@
       font-weight: 700;
       color: #0f172a;
       background: var(--accent);
-      box-shadow: 0 8px 24px rgba(236, 72, 153, 0.35);
+      box-shadow: 0 8px 24px rgba(249, 168, 212, 0.35);
     }
     .share-buttons {
       display: flex;
@@ -566,7 +566,7 @@
       iconCreateFunction: (cl) => {
         const count = cl.getChildCount();
         return L.divIcon({
-          html: `<div class="cluster-icon"><img src="./assets/pins/cluster.png" alt="cluster"/><span class="cluster-icon-count">${count}</span></div>`,
+          html: `<div class="cluster-icon"><img src="./assets/new_pins/cluster.jpg" alt="cluster"/><span class="cluster-icon-count">${count}</span></div>`,
           className: "",
           iconSize: [64, 64],
         });
@@ -760,24 +760,26 @@
     }
 
     const genreIcons = {
-      "焼肉": "./assets/pins/yakiniku.png",
-      "ステーキ": "./assets/pins/steak.png",
-      "シュラスコ": "./assets/pins/churrasco.png",
+      "焼肉": "./assets/new_pins/yakiniku.png",
+      "ステーキ": "./assets/new_pins/steak.png",
+      "シュラスコ": "./assets/new_pins/syurasuko.png",
       "焼き鳥・もつ焼き": "./assets/pins/yakitori.png",
-      "しゃぶしゃぶ": "./assets/pins/shabushabu.png",
-      "韓国": "./assets/pins/korea.png",
-      "中華": "./assets/pins/china.png",
+      "しゃぶしゃぶ": "./assets/new_pins/syabusyabu.png",
+      "韓国": "./assets/new_pins/kankoku.png",
+      "その他": "./assets/pins/steak.png",
     };
 
     function normalizeGenreText(genre) {
       const g = (genre || "").trim();
       if (/焼き鳥|もつ焼き/.test(g)) return "焼き鳥・もつ焼き";
+      if (g === "中華") return "その他";
+      if (!g) return "その他";
       return g;
     }
 
     function iconForRow(row) {
       const genreText = normalizeGenreText(row.genre || "");
-      const iconUrl = genreIcons[genreText] || "./assets/pins/steak.png";
+      const iconUrl = genreIcons[genreText] || genreIcons["その他"];
       return L.icon({
         iconUrl,
         iconSize: [48, 48],
@@ -1090,7 +1092,7 @@
         if (geocodeMarker) map.removeLayer(geocodeMarker);
         geocodeMarker = L.circleMarker([lat, lon], {
           radius: 10,
-          color: "#ec4899",
+          color: "#f9a8d4",
           weight: 2,
           fillColor: "#f9a8d4",
           fillOpacity: 0.4,
@@ -1162,15 +1164,27 @@
         chip.type = "button";
         chip.className = "genre-chip";
         chip.dataset.genre = genreKey || "";
-        if (iconUrl) {
+        let displayLabel = label;
+        if (!genreKey) {
+          displayLabel = "All";
+        } else if (genreKey === "その他") {
+          displayLabel = "other";
+        }
+        const showText = !genreKey || genreKey === "その他";
+        if (iconUrl && genreKey) {
           const img = document.createElement("img");
           img.src = iconUrl;
-          img.alt = label;
+          img.alt = displayLabel;
           chip.appendChild(img);
         }
-        const text = document.createElement("span");
-        text.textContent = label;
-        chip.appendChild(text);
+        if (showText) {
+          const text = document.createElement("span");
+          text.textContent = displayLabel;
+          chip.appendChild(text);
+        } else {
+          chip.setAttribute("aria-label", displayLabel);
+          chip.title = displayLabel;
+        }
         chip.addEventListener("click", () => {
           activeGenre = chip.dataset.genre || "";
           Array.from(genreChips.querySelectorAll(".genre-chip")).forEach(el => el.classList.remove("is-active"));
@@ -1185,8 +1199,8 @@
         genreChips.appendChild(chip);
       };
 
-      // 「すべて」チップ
-      createChip("", "ジャンル: すべて", null);
+      // 「All」チップ（全ジャンル）
+      createChip("", "All", null);
 
       sorted.forEach(([name]) => {
         const iconUrl = genreIcons[name] || null;
