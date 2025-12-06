@@ -195,6 +195,9 @@
       display: block;
       object-fit: cover;
     }
+    .leaflet-tile-pane img.leaflet-tile {
+      filter: brightness(1.15) contrast(1.05);
+    }
     .cluster-icon-count {
       position: absolute;
       bottom: 5px;
@@ -550,6 +553,7 @@
     L.tileLayer("https://stamen-tiles.a.ssl.fastly.net/toner/{z}/{x}/{y}.png", {
       attribution: "&copy; OpenStreetMap contributors &copy; Stamen Design",
       maxZoom: 19,
+      detectRetina: true,
     }).addTo(map);
     const tokyoBounds = {
       minLat: 35,
