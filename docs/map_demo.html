@@ -44,13 +44,13 @@
       --bg: #000000;
       --panel: rgba(255, 255, 255, 0.08);
       --text: #e2e8f0;
-      --accent: #f9a8d4;
+      --accent: #eab676;
       --muted: #94a3b8;
     }
     * { box-sizing: border-box; }
     body, html {
       margin: 0; padding: 0; width: 100%; height: 100%;
-      background: radial-gradient(circle at 20% 20%, rgba(249, 168, 212, 0.16), transparent 35%),
+      background: radial-gradient(circle at 20% 20%, rgba(234, 182, 118, 0.18), transparent 35%),
                   radial-gradient(circle at 80% 0%, rgba(14, 165, 233, 0.1), transparent 30%),
                   var(--bg);
       color: var(--text);
@@ -91,16 +91,17 @@
       align-items: center;
     }
     .genre-chips {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      align-items: center;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      align-items: stretch;
     }
     .genre-chip {
       display: inline-flex;
       align-items: center;
-      gap: 4px;
-      padding: 6px 10px;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 12px;
       border-radius: 999px;
       border: 1px solid rgba(255, 255, 255, 0.12);
       background: rgba(15, 23, 42, 0.9);
@@ -109,8 +110,8 @@
       cursor: pointer;
     }
     .genre-chip img {
-      width: 18px;
-      height: 18px;
+      width: 32px;
+      height: 32px;
       object-fit: contain;
     }
     .genre-chip.is-active {
@@ -160,7 +161,7 @@
       border-radius: 8px;
       font-weight: 700;
       cursor: pointer;
-      box-shadow: 0 6px 20px rgba(249, 168, 212, 0.35);
+      box-shadow: 0 6px 20px rgba(234, 182, 118, 0.35);
     }
     .control-button:active { transform: translateY(1px); }
     .select {
@@ -184,11 +185,15 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      border-radius: 50%;
+      overflow: hidden;
+      background: transparent;
     }
     .cluster-icon img {
-      width: 52px;
-      height: 52px;
+      width: 100%;
+      height: 100%;
       display: block;
+      object-fit: cover;
     }
     .cluster-icon-count {
       position: absolute;
@@ -375,7 +380,7 @@
       font-weight: 700;
       color: #0f172a;
       background: var(--accent);
-      box-shadow: 0 8px 24px rgba(249, 168, 212, 0.35);
+      box-shadow: 0 8px 24px rgba(234, 182, 118, 0.35);
     }
     .share-buttons {
       display: flex;
@@ -447,15 +452,12 @@
         <div class="controls">
           <div class="search-container">
             <div class="search-bar">
-              <span class="search-label">地名で移動 / 店名</span>
-              <input id="geocode-input" type="search" placeholder="地名 / 店名">
-              <div class="search-actions">
-                <button id="geocode-button" class="control-button" type="button">検索</button>
-                <button id="geo-button" class="control-button" type="button">現在地</button>
-              </div>
+              <span class="search-label">店名</span>
+              <input id="geocode-input" type="search" placeholder="店名で検索">
             </div>
             <div id="search-suggestions" class="search-suggestions"></div>
           </div>
+          <button id="geo-button" class="control-button" type="button">現在地</button>
         </div>
       </div>
     </header>
@@ -591,7 +593,6 @@
     const filterPanel = document.getElementById("filter-panel");
     const geoButton = document.getElementById("geo-button");
     const geocodeInput = document.getElementById("geocode-input");
-    const geocodeButton = document.getElementById("geocode-button");
     const searchSuggestions = document.getElementById("search-suggestions");
     const updatedSecondary = document.getElementById("updated-secondary");
       const countSecondary = document.getElementById("count-secondary");
@@ -718,7 +719,7 @@
       const results = [];
       const seen = new Set();
       for (const item of searchItems) {
-        const hay = `${item.name} ${item.address}`.toLowerCase();
+        const hay = `${item.name}`.toLowerCase();
         if (!hay.includes(q)) continue;
         const id = item.marker && item.marker._leaflet_id;
         if (id && seen.has(id)) continue;
@@ -1056,62 +1057,20 @@
     if (priceSelect) {
       priceSelect.addEventListener("change", applyFilter);
     }
-    geocodeButton.addEventListener("click", async () => {
-      const q = geocodeInput.value.trim();
-      if (!q) {
-        showToast("地名または店名を入力してください");
-        return;
-      }
-      // サジェストがあれば優先してジャンプ
-      if (currentSuggestions.length) {
-        const picked = currentSuggestions[0];
-        clearSuggestions();
-        if (picked && picked.marker) {
-          focusOnMarker(picked.marker);
-          trackEvent("search_select", { source: "suggestion_enter" });
-          return;
-        }
-      }
-      showToast("地名を検索中…");
-      try {
-        const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=jp&q=${encodeURIComponent(q)}`;
-        const res = await fetch(url, { headers: { "Accept-Language": "ja" } });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const hits = await res.json();
-        if (!hits || !hits.length) {
-          showToast("見つかりませんでした");
-          return;
-        }
-        const hit = hits[0];
-        const lat = parseFloat(hit.lat);
-        const lon = parseFloat(hit.lon);
-        if (!Number.isFinite(lat) || !Number.isFinite(lon) || !inTokyoBounds(lat, lon)) {
-          showToast("東京エリア内でヒットしませんでした");
-          return;
-        }
-        if (geocodeMarker) map.removeLayer(geocodeMarker);
-        geocodeMarker = L.circleMarker([lat, lon], {
-          radius: 10,
-          color: "#f9a8d4",
-          weight: 2,
-          fillColor: "#f9a8d4",
-          fillOpacity: 0.4,
-        }).addTo(map);
-        map.setView([lat, lon], 15);
-        showToast(`移動しました: ${hit.display_name || q}`);
-        trackEvent("geocode_search", { location: "header" });
-      } catch (err) {
-        console.error("geocode error", err);
-        showToast("検索に失敗しました");
-      }
-    });
     geocodeInput.addEventListener("input", () => {
       renderSuggestions(geocodeInput.value || "");
     });
     geocodeInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         e.preventDefault();
-        geocodeButton.click();
+        if (currentSuggestions.length) {
+          const picked = currentSuggestions[0];
+          clearSuggestions();
+          if (picked && picked.marker) {
+            focusOnMarker(picked.marker);
+            trackEvent("search_select", { source: "enter" });
+          }
+        }
       }
       if (e.key === "Escape") {
         clearSuggestions();
@@ -1136,12 +1095,16 @@
           }
           userMarker = L.circleMarker([latitude, longitude], {
             radius: 8,
-            color: "#22d3ee",
+            color: "#eab676",
             weight: 2,
-            fillColor: "#22d3ee",
+            fillColor: "#eab676",
             fillOpacity: 0.5,
           });
-          userCircle = L.circle([latitude, longitude], { radius: accuracy || 120, color: "#0ea5e9", fillOpacity: 0.1 });
+          userCircle = L.circle([latitude, longitude], {
+            radius: accuracy || 120,
+            color: "#eab676",
+            fillOpacity: 0.08,
+          });
           userMarker.addTo(map);
           userCircle.addTo(map);
           map.setView([latitude, longitude], 15);
@@ -1171,7 +1134,7 @@
           displayLabel = "other";
         }
         const showText = !genreKey || genreKey === "その他";
-        if (iconUrl && genreKey) {
+        if (iconUrl && genreKey && genreKey !== "その他") {
           const img = document.createElement("img");
           img.src = iconUrl;
           img.alt = displayLabel;
