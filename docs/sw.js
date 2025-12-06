@@ -1,11 +1,12 @@
-const CACHE_NAME = "tmm-cache-v4";
+const CACHE_NAME = "tmm-cache-v6";
 const ASSETS = [
   "./map_demo.html",
   "./manifest.webmanifest",
   "./sw.js",
   "./ogp.png",
-  "./assets/new_pins/processed/cluster.png",
+  "./assets/new_pins/processed/onikuimages-1129079_S.png",
   "./assets/pins/steak.png",
+  "./assets/pins/other.png",
   "./assets/pins/yakiniku.png",
   "./assets/pins/churrasco.png",
   "./assets/pins/yakitori.png",
