@@ -44,13 +44,13 @@
       --bg: #000000;
       --panel: rgba(255, 255, 255, 0.08);
       --text: #e2e8f0;
-      --accent: #c47a3c;
+      --accent: #f9737a;
       --muted: #94a3b8;
     }
     * { box-sizing: border-box; }
     body, html {
       margin: 0; padding: 0; width: 100%; height: 100%;
-      background: radial-gradient(circle at 20% 20%, rgba(196, 122, 60, 0.24), transparent 35%),
+      background: radial-gradient(circle at 20% 20%, rgba(249, 115, 122, 0.24), transparent 35%),
                   radial-gradient(circle at 80% 0%, rgba(14, 165, 233, 0.1), transparent 30%),
                   var(--bg);
       color: var(--text);
@@ -114,6 +114,19 @@
       height: 40px;
       object-fit: contain;
     }
+    .genre-chip--icon-only {
+      padding: 0;
+      border: none;
+      background: transparent;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+    }
+    .genre-chip--icon-only img {
+      width: 100%;
+      height: 100%;
+      border-radius: inherit;
+      object-fit: contain;
+    }
     .genre-chip.is-active {
       background: var(--accent);
       color: #0f172a;
@@ -121,6 +134,11 @@
     }
     .genre-chip.is-active img {
       filter: brightness(0.95);
+    }
+    .genre-chip--icon-only.is-active {
+      background: transparent;
+      border-color: transparent;
+      box-shadow: 0 0 0 3px var(--accent);
     }
     .control {
       display: flex;
@@ -161,7 +179,7 @@
       border-radius: 8px;
       font-weight: 700;
       cursor: pointer;
-      box-shadow: 0 6px 20px rgba(196, 122, 60, 0.35);
+      box-shadow: 0 6px 20px rgba(249, 115, 122, 0.4);
     }
     .control-button:active { transform: translateY(1px); }
     .select {
@@ -383,7 +401,7 @@
       font-weight: 700;
       color: #0f172a;
       background: var(--accent);
-      box-shadow: 0 8px 24px rgba(196, 122, 60, 0.35);
+      box-shadow: 0 8px 24px rgba(249, 115, 122, 0.4);
     }
     .share-buttons {
       display: flex;
@@ -1098,14 +1116,14 @@
           }
           userMarker = L.circleMarker([latitude, longitude], {
             radius: 8,
-            color: "#c47a3c",
+            color: "#f9737a",
             weight: 2,
-            fillColor: "#c47a3c",
+            fillColor: "#f9737a",
             fillOpacity: 0.5,
           });
           userCircle = L.circle([latitude, longitude], {
             radius: accuracy || 120,
-            color: "#c47a3c",
+            color: "#f9737a",
             fillOpacity: 0.08,
           });
           userMarker.addTo(map);
@@ -1142,6 +1160,9 @@
           img.src = iconUrl;
           img.alt = displayLabel;
           chip.appendChild(img);
+        }
+        if (!showText && iconUrl) {
+          chip.classList.add("genre-chip--icon-only");
         }
         if (showText) {
           const text = document.createElement("span");
