@@ -33,6 +33,8 @@
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/png" href="assets/new_pins/processed/cluster.png" />
+  <link rel="apple-touch-icon" href="assets/new_pins/processed/cluster.png" />
   <meta name="theme-color" content="#000000" />
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9721987325108836"
           crossorigin="anonymous"></script>
@@ -589,7 +591,11 @@
       spiderfyOnMaxZoom: true,
       iconCreateFunction: (cl) => {
         const count = cl.getChildCount();
-        let iconUrl = "./assets/new_pins/processed/cluster.png";
+        const isAllGenreSelected = typeof activeGenre === "string" && activeGenre === "";
+        let iconUrl = "./assets/pins/cluster.png";
+        if (isAllGenreSelected) {
+          iconUrl = "./assets/new_pins/processed/cluster.png";
+        }
         if (typeof activeGenre === "string" && activeGenre && typeof genreIcons === "object") {
           const candidate = genreIcons[activeGenre];
           if (candidate) {
