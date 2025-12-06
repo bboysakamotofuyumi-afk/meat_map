@@ -237,6 +237,7 @@
     .search-suggestion-meta { color: var(--muted); font-size: 12px; margin-top: 2px; }
     #map { width: 100%; height: 100%; min-height: 320px; position: relative; z-index: 1; }
     #map, .leaflet-container { background: #000; }
+    #map, .leaflet-container { background: #000; }
     .toast {
       position: fixed;
       bottom: 12px;
@@ -365,10 +366,38 @@
     .lp-meta a {
       color: var(--text);
     }
+    .filter-toggle {
+      display: none;
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--text);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .filter-panel {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      width: 100%;
+    }
     @media (max-width: 900px) {
       #app { grid-template-rows: auto auto 1fr; }
       header { flex-direction: column; align-items: flex-start; }
+      .filter-toggle { display: inline-flex; align-items: center; gap: 6px; }
+      .filter-panel {
+        width: 100%;
+        flex-direction: column;
+        align-items: flex-start;
+        margin-top: 8px;
+        display: none;
+      }
+      .filter-panel.is-open {
+        display: flex;
+      }
       .controls { width: 100%; }
+      .search-container { max-width: 100%; }
       .theme-container { margin-left: 0; }
     }
     a { color: var(--accent); }
@@ -377,33 +406,55 @@
 <body>
   <div id="app">
     <header>
-      <div class="controls">
-        <label class="control"><input type="checkbox" data-rank="S" checked>S</label>
-        <label class="control"><input type="checkbox" data-rank="A" checked>A</label>
-        <label class="control"><input type="checkbox" data-rank="B">B</label>
-        <label class="control"><input type="checkbox" data-rank="C">C</label>
-      </div>
-      <div class="controls">
-        <select id="genre-select" class="control-select">
-          <option value="">ジャンル: すべて</option>
-        </select>
-        <div class="search-container">
-          <div class="search-bar">
-            <span class="search-label">住所で移動 / 店名</span>
-            <input id="geocode-input" type="search" placeholder="例: 渋谷駅 / 店名">
-            <div class="search-actions">
-              <button id="geocode-button" class="control-button" type="button">検索</button>
-              <button id="geo-button" class="control-button" type="button">現在地</button>
-            </div>
-          </div>
-          <div id="search-suggestions" class="search-suggestions"></div>
+      <button id="filter-toggle" class="filter-toggle" type="button">フィルタを表示</button>
+      <div id="filter-panel" class="filter-panel">
+        <div class="controls">
+          <label class="control"><input type="checkbox" data-rank="S" checked>S</label>
+          <label class="control"><input type="checkbox" data-rank="A" checked>A</label>
+          <label class="control"><input type="checkbox" data-rank="B">B</label>
+          <label class="control"><input type="checkbox" data-rank="C">C</label>
         </div>
-      </div>
-      <div class="theme-container">
-        <select id="theme-select" class="select">
-          <option value="light">テーマ: Light</option>
-          <option value="dark">テーマ: Dark</option>
-        </select>
+        <div class="controls">
+          <select id="genre-select" class="control-select">
+            <option value="">ジャンル: すべて</option>
+          </select>
+          <select id="area-select" class="control-select">
+            <option value="">エリア: 区・市</option>
+          </select>
+          <select id="station-select" class="control-select">
+            <option value="">駅: すべて</option>
+            <option value="tokyo">東京駅周辺</option>
+            <option value="shinjuku">新宿駅周辺</option>
+            <option value="shibuya">渋谷駅周辺</option>
+            <option value="ikebukuro">池袋駅周辺</option>
+            <option value="ueno">上野駅周辺</option>
+            <option value="ginza">銀座駅周辺</option>
+            <option value="shimbashi">新橋駅周辺</option>
+          </select>
+          <select id="price-select" class="control-select">
+            <option value="">予算: 指定なし</option>
+            <option value="lunch-2000">ランチ ~2,000円</option>
+            <option value="dinner-5000">ディナー ~5,000円</option>
+            <option value="dinner-8000">ディナー ~8,000円</option>
+          </select>
+          <div class="search-container">
+            <div class="search-bar">
+              <span class="search-label">住所で移動 / 店名</span>
+              <input id="geocode-input" type="search" placeholder="例: 渋谷駅 / 店名">
+              <div class="search-actions">
+                <button id="geocode-button" class="control-button" type="button">検索</button>
+                <button id="geo-button" class="control-button" type="button">現在地</button>
+              </div>
+            </div>
+            <div id="search-suggestions" class="search-suggestions"></div>
+          </div>
+        </div>
+        <div class="theme-container">
+          <select id="theme-select" class="select">
+            <option value="light">テーマ: Light</option>
+            <option value="dark">テーマ: Dark</option>
+          </select>
+        </div>
       </div>
     </header>
     <div id="map"></div>
@@ -536,11 +587,27 @@
     const GEOCODE_MAX_REQUESTS = 300;
     let geocodeCache = {};
     const allGenreCounts = new Map();
+    const allAreaCounts = new Map();
+    const STATION_FILTERS = [
+      { id: "tokyo", label: "東京駅周辺", lat: 35.681236, lng: 139.767125 },
+      { id: "shinjuku", label: "新宿駅周辺", lat: 35.690921, lng: 139.700257 },
+      { id: "shibuya", label: "渋谷駅周辺", lat: 35.658034, lng: 139.701636 },
+      { id: "ikebukuro", label: "池袋駅周辺", lat: 35.729503, lng: 139.7109 },
+      { id: "ueno", label: "上野駅周辺", lat: 35.713768, lng: 139.777254 },
+      { id: "ginza", label: "銀座駅周辺", lat: 35.671946, lng: 139.76547 },
+      { id: "shimbashi", label: "新橋駅周辺", lat: 35.666195, lng: 139.7586 },
+    ];
+    const STATION_RADIUS_KM = 1.5;
     const searchItems = [];
     let currentSuggestions = [];
 
     const toast = document.getElementById("toast");
     const genreSelect = document.getElementById("genre-select");
+    const areaSelect = document.getElementById("area-select");
+    const stationSelect = document.getElementById("station-select");
+    const priceSelect = document.getElementById("price-select");
+    const filterToggle = document.getElementById("filter-toggle");
+    const filterPanel = document.getElementById("filter-panel");
     const geoButton = document.getElementById("geo-button");
     const geocodeInput = document.getElementById("geocode-input");
     const geocodeButton = document.getElementById("geocode-button");
@@ -575,6 +642,13 @@
       gtag("config", id);
     };
     initGA(siteConfig.gaMeasurementId);
+
+    if (filterToggle && filterPanel) {
+      filterToggle.addEventListener("click", () => {
+        const isOpen = filterPanel.classList.toggle("is-open");
+        filterToggle.textContent = isOpen ? "フィルタを隠す" : "フィルタを表示";
+      });
+    }
 
     if (shareX) {
       shareX.href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
@@ -613,6 +687,37 @@
         .normalize("NFKC")
         .replace(/[\s　]+/g, "")
         .toLowerCase();
+    }
+
+    function parseCityFromAddress(address) {
+      if (!address) return "";
+      let s = String(address).trim();
+      s = s.replace(/^東京都/, "").trim();
+      const m = s.match(/^([^\s0-9丁目\-・,、]+?[区市郡町村])/);
+      return m ? m[1] : "";
+    }
+
+    function getPriceInfoFromRow(row) {
+      const text = (row.notes || "").toString();
+      const lunchMatch = text.match(/(?:L|ランチ)[^0-9]*([0-9]{3,5})/);
+      const dinnerMatch = text.match(/(?:D|ディナー)[^0-9]*([0-9]{3,5})/);
+      return {
+        lunchPrice: lunchMatch ? parseInt(lunchMatch[1], 10) : null,
+        dinnerPrice: dinnerMatch ? parseInt(dinnerMatch[1], 10) : null,
+      };
+    }
+
+    function distanceKm(lat1, lng1, lat2, lng2) {
+      const R = 6371;
+      const toRad = (d) => d * Math.PI / 180;
+      const dLat = toRad(lat2 - lat1);
+      const dLng = toRad(lng2 - lng1);
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+        Math.sin(dLng / 2) * Math.sin(dLng / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
     }
 
     function loadGeocodeCacheFromStorage() {
@@ -720,7 +825,6 @@
     function createPopup(row) {
       const rating = row.rating ? `★${row.rating} (${row.review_count || 0})` : "";
       const notes = row.notes ? `<div style="margin-top:4px; color:#cbd5e1;">${row.notes}</div>` : "";
-      const url = row.url ? `<div style="margin-top:6px;"><a href="${row.url}" target="_blank" rel="noopener">公式/詳細</a></div>` : "";
       const rankBadge = row.carnivore_rank
         ? `<span class="rank-badge" style="background:${rankColors[row.carnivore_rank] || "#cbd5e1"}">${row.carnivore_rank}</span>`
         : "";
@@ -732,6 +836,18 @@
       const urlButton = row.url
         ? `<a href="${row.url}" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; gap:6px; padding:8px 10px; background:${rankColors[row.carnivore_rank] || "#f97316"}; color:#0f172a; border-radius:8px; text-decoration:none; font-weight:700;">店舗ページ</a>`
         : "";
+      const lat = parseFloat(row.lat);
+      const lng = parseFloat(row.lng);
+      let mapsButtons = "";
+      if (Number.isFinite(lat) && Number.isFinite(lng)) {
+        const dest = `${lat},${lng}`;
+        const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(dest)}`;
+        const dirUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest)}`;
+        mapsButtons = `
+          <a href="${mapsUrl}" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; padding:6px 8px; border-radius:8px; background:rgba(15,23,42,0.9); color:#e2e8f0; font-size:12px; text-decoration:none;">Googleマップで開く</a>
+          <a href="${dirUrl}" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; padding:6px 8px; border-radius:8px; background:rgba(15,23,42,0.9); color:#e2e8f0; font-size:12px; text-decoration:none;">経路検索</a>
+        `;
+      }
       return `
         <div style="min-width: 180px;">
           <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
@@ -742,7 +858,10 @@
           ${genres}
           <div style="margin-top:4px; display:flex; gap:6px; align-items:center;">${reviewBadge}</div>
           ${notes}
-          <div style="margin-top:8px;">${urlButton}</div>
+          <div style="margin-top:8px; display:flex; flex-wrap:wrap; gap:6px;">
+            ${urlButton || ""}
+            ${mapsButtons}
+          </div>
         </div>
       `;
     }
@@ -767,12 +886,20 @@
       if (genreText) {
         allGenreCounts.set(genreText, (allGenreCounts.get(genreText) || 0) + 1);
       }
-          const marker = L.marker([lat, lng], { icon: iconForRow(row), rank });
+      const city = parseCityFromAddress(row.address || "");
+      if (city) {
+        allAreaCounts.set(city, (allAreaCounts.get(city) || 0) + 1);
+      }
+      const priceInfo = getPriceInfoFromRow(row);
+      const marker = L.marker([lat, lng], { icon: iconForRow(row), rank });
       marker.rank = rank;
       marker.meta = {
         name: row.name || "",
         address: row.address || "",
         genreText,
+        city,
+        lunchPrice: priceInfo.lunchPrice,
+        dinnerPrice: priceInfo.dinnerPrice,
       };
       marker.bindPopup(createPopup(row));
       markers.push(marker);
@@ -783,6 +910,9 @@
       });
       if (allGenreCounts.size) {
         populateGenreOptionsFromCounts(allGenreCounts);
+      }
+      if (allAreaCounts.size) {
+        populateAreaOptionsFromCounts(allAreaCounts);
       }
       if (countSecondary) {
         countSecondary.textContent = `${markers.length} 件`;
@@ -851,12 +981,27 @@
       const visibleByRank = { S: 0, A: 0, B: 0, C: 0 };
       let visible = 0;
       const selectedGenre = (genreSelect.value || "").trim().toLowerCase();
+      const selectedArea = areaSelect ? (areaSelect.value || "").trim() : "";
+      const stationKey = stationSelect ? (stationSelect.value || "").trim() : "";
+      const priceKey = priceSelect ? (priceSelect.value || "").trim() : "";
+      const stationDef = stationKey ? STATION_FILTERS.find(s => s.id === stationKey) : null;
       markers.forEach(marker => {
         const rank = marker.rank || marker.options.rank || "C";
         const meta = marker.meta || {};
-        if (!bounds.contains(marker.getLatLng())) return;
+        const latLng = marker.getLatLng();
+        if (!bounds.contains(latLng)) return;
         const genreOk = !selectedGenre || (meta.genreText || "").toLowerCase().includes(selectedGenre);
-        if (!allowed.includes(rank) || !genreOk) return;
+        let areaOk = true;
+        if (selectedArea) {
+          areaOk = (meta.city || "") === selectedArea;
+        }
+        let stationOk = true;
+        if (stationDef) {
+          const d = distanceKm(latLng.lat, latLng.lng, stationDef.lat, stationDef.lng);
+          stationOk = d <= STATION_RADIUS_KM;
+        }
+        const priceOk = priceMatches(priceKey, meta);
+        if (!allowed.includes(rank) || !genreOk || !areaOk || !stationOk || !priceOk) return;
         cluster.addLayer(marker);
         visibleByRank[rank] = (visibleByRank[rank] || 0) + 1;
         visible += 1;
@@ -907,6 +1052,7 @@
         geocodeQueue.length = 0;
         geocodeRequestsDone = 0;
         allGenreCounts.clear();
+        allAreaCounts.clear();
         searchItems.length = 0;
         const rows = result.data || [];
         let added = 0;
@@ -920,12 +1066,20 @@
             if (genreText) {
               allGenreCounts.set(genreText, (allGenreCounts.get(genreText) || 0) + 1);
             }
+            const city = parseCityFromAddress(row.address || "");
+            if (city) {
+              allAreaCounts.set(city, (allAreaCounts.get(city) || 0) + 1);
+            }
+            const priceInfo = getPriceInfoFromRow(row);
       const marker = L.marker([lat, lng], { icon: iconForRow(row), rank });
             marker.rank = rank; // keep rank on instance for filtering/legend
             marker.meta = {
               name: row.name || "",
               address: row.address || "",
               genreText,
+              city,
+              lunchPrice: priceInfo.lunchPrice,
+              dinnerPrice: priceInfo.dinnerPrice,
             };
             marker.bindPopup(createPopup(row));
             markers.push(marker);
@@ -946,6 +1100,9 @@
         if (allGenreCounts.size) {
           populateGenreOptionsFromCounts(allGenreCounts);
         }
+        if (allAreaCounts.size) {
+          populateAreaOptionsFromCounts(allAreaCounts);
+        }
         showToast(`読み込み完了: ${added} 件`);
         applyFilter();
         if (geocodeQueue.length) {
@@ -961,6 +1118,15 @@
     genreSelect.addEventListener("change", () => {
       applyFilter();
     });
+    if (areaSelect) {
+      areaSelect.addEventListener("change", applyFilter);
+    }
+    if (stationSelect) {
+      stationSelect.addEventListener("change", applyFilter);
+    }
+    if (priceSelect) {
+      priceSelect.addEventListener("change", applyFilter);
+    }
     geocodeButton.addEventListener("click", async () => {
       const q = geocodeInput.value.trim();
       if (!q) {
@@ -1067,6 +1233,40 @@
         } else {
           genreSelect.value = "";
         }
+      }
+    }
+
+    function priceMatches(priceKey, meta) {
+      if (!priceKey) return true;
+      const lunch = meta.lunchPrice;
+      const dinner = meta.dinnerPrice;
+      if (priceKey === "lunch-2000") {
+        if (lunch == null) return false;
+        return lunch <= 2000;
+      }
+      if (priceKey === "dinner-5000") {
+        if (dinner == null) return false;
+        return dinner <= 5000;
+      }
+      if (priceKey === "dinner-8000") {
+        if (dinner == null) return false;
+        return dinner <= 8000;
+      }
+      return true;
+    }
+
+    function populateAreaOptionsFromCounts(areaCounts) {
+      if (!areaSelect) return;
+      const entries = Array.from(areaCounts.entries()).filter(([, count]) => count > 0);
+      const sorted = entries.sort((a, b) => a[0].localeCompare(b[0], "ja"));
+      const previous = areaSelect.value;
+      const options = ['<option value="">エリア: 区・市</option>'].concat(
+        sorted.map(([name, count]) => `<option value="${name}">${name} (${count})</option>`)
+      );
+      areaSelect.innerHTML = options.join("");
+      if (previous) {
+        const exists = sorted.some(([name]) => name === previous);
+        areaSelect.value = exists ? previous : "";
       }
     }
 
