@@ -120,6 +120,7 @@
       background: transparent;
       width: 100%;
       aspect-ratio: 1 / 1;
+      border-radius: 10px;
     }
     .genre-chip--icon-only img {
       width: 100%;
@@ -136,9 +137,9 @@
       filter: brightness(0.95);
     }
     .genre-chip--icon-only.is-active {
-      background: transparent;
-      border-color: transparent;
-      box-shadow: 0 0 0 3px var(--accent);
+      background: rgba(249, 115, 122, 0.18);
+      border-color: var(--accent);
+      box-shadow: none;
     }
     .control {
       display: flex;
@@ -588,8 +589,15 @@
       spiderfyOnMaxZoom: true,
       iconCreateFunction: (cl) => {
         const count = cl.getChildCount();
+        let iconUrl = "./assets/new_pins/processed/cluster.png";
+        if (typeof activeGenre === "string" && activeGenre && typeof genreIcons === "object") {
+          const candidate = genreIcons[activeGenre];
+          if (candidate) {
+            iconUrl = candidate;
+          }
+        }
         return L.divIcon({
-          html: `<div class="cluster-icon"><img src="./assets/new_pins/processed/cluster.png" alt="cluster"/><span class="cluster-icon-count">${count}</span></div>`,
+          html: `<div class="cluster-icon"><img src="${iconUrl}" alt="cluster"/><span class="cluster-icon-count">${count}</span></div>`,
           className: "",
           iconSize: [64, 64],
         });
@@ -1155,7 +1163,7 @@
           displayLabel = "other";
         }
         const showText = !genreKey || genreKey === "その他";
-        if (iconUrl && genreKey) {
+        if (iconUrl && genreKey && genreKey !== "その他") {
           const img = document.createElement("img");
           img.src = iconUrl;
           img.alt = displayLabel;
