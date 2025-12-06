@@ -22,9 +22,9 @@
       signalGooglefcPresent();
     })();
   </script>
-  <meta name="description" content="東京都内の焼肉、ステーキなど肉料理店をランク付きでマップ表示。エリア・ジャンル・予算で絞り込み可能な非公式まとめマップです。" />
+  <meta name="description" content="東京都内の焼肉、ステーキなど肉料理店を地図で一覧表示。エリア・ジャンル・予算で絞り込み可能な非公式まとめマップです。" />
   <meta property="og:title" content="東京都の肉料理マップ" />
-  <meta property="og:description" content="東京都内の肉料理店を、独自スコアでランク付けして地図表示。焼肉・ステーキ・肉バルなど、ガッツリ肉が食べたいときのための非公式マップです。" />
+  <meta property="og:description" content="東京都内の肉料理店を地図上に表示。焼肉・ステーキ・肉バルなど、ガッツリ肉が食べたいときのための非公式マップです。" />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://genkishimura2000.github.io/meat_map/map_demo.html" />
   <meta property="og:image" content="https://genkishimura2000.github.io/meat_map/ogp.png?v=20251204" />
@@ -33,7 +33,7 @@
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <meta name="theme-color" content="#0f172a" />
+  <meta name="theme-color" content="#000000" />
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9721987325108836"
           crossorigin="anonymous"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
@@ -44,7 +44,7 @@
       --bg: #000000;
       --panel: rgba(255, 255, 255, 0.08);
       --text: #e2e8f0;
-      --accent: #f97316;
+      --accent: #ec4899;
       --muted: #94a3b8;
     }
     * { box-sizing: border-box; }
@@ -90,6 +90,37 @@
       gap: 8px;
       align-items: center;
     }
+    .genre-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+    .genre-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--muted);
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .genre-chip img {
+      width: 18px;
+      height: 18px;
+      object-fit: contain;
+    }
+    .genre-chip.is-active {
+      background: var(--accent);
+      color: #0f172a;
+      border-color: rgba(248, 250, 252, 0.9);
+    }
+    .genre-chip.is-active img {
+      filter: brightness(0.95);
+    }
     .control {
       display: flex;
       align-items: center;
@@ -129,7 +160,7 @@
       border-radius: 8px;
       font-weight: 700;
       cursor: pointer;
-      box-shadow: 0 6px 20px rgba(249, 115, 22, 0.35);
+      box-shadow: 0 6px 20px rgba(236, 72, 153, 0.35);
     }
     .control-button:active { transform: translateY(1px); }
     .select {
@@ -145,9 +176,6 @@
     .control-select option,
     .select option {
       color: #111827;
-    }
-    .theme-container {
-      margin-left: auto;
     }
     .cluster-icon {
       position: relative;
@@ -347,7 +375,7 @@
       font-weight: 700;
       color: #0f172a;
       background: var(--accent);
-      box-shadow: 0 8px 24px rgba(249, 115, 22, 0.35);
+      box-shadow: 0 8px 24px rgba(236, 72, 153, 0.35);
     }
     .share-buttons {
       display: flex;
@@ -398,7 +426,6 @@
       }
       .controls { width: 100%; }
       .search-container { max-width: 100%; }
-      .theme-container { margin-left: 0; }
     }
     a { color: var(--accent); }
   </style>
@@ -409,25 +436,19 @@
       <button id="filter-toggle" class="filter-toggle" type="button">フィルタを表示</button>
       <div id="filter-panel" class="filter-panel">
         <div class="controls">
-          <label class="control"><input type="checkbox" data-rank="S" checked>S</label>
-          <label class="control"><input type="checkbox" data-rank="A" checked>A</label>
-          <label class="control"><input type="checkbox" data-rank="B">B</label>
-          <label class="control"><input type="checkbox" data-rank="C">C</label>
-        </div>
-        <div class="controls">
-          <select id="genre-select" class="control-select">
-            <option value="">ジャンル: すべて</option>
-          </select>
+          <div id="genre-chips" class="genre-chips"></div>
           <select id="price-select" class="control-select">
             <option value="">予算: 指定なし</option>
             <option value="lunch-2000">ランチ ~2,000円</option>
             <option value="dinner-5000">ディナー ~5,000円</option>
             <option value="dinner-8000">ディナー ~8,000円</option>
           </select>
+        </div>
+        <div class="controls">
           <div class="search-container">
             <div class="search-bar">
-              <span class="search-label">住所で移動 / 店名</span>
-              <input id="geocode-input" type="search" placeholder="例: 渋谷駅 / 店名">
+              <span class="search-label">地名で移動 / 店名</span>
+              <input id="geocode-input" type="search" placeholder="地名 / 店名">
               <div class="search-actions">
                 <button id="geocode-button" class="control-button" type="button">検索</button>
                 <button id="geo-button" class="control-button" type="button">現在地</button>
@@ -435,12 +456,6 @@
             </div>
             <div id="search-suggestions" class="search-suggestions"></div>
           </div>
-        </div>
-        <div class="theme-container">
-          <select id="theme-select" class="select">
-            <option value="light">テーマ: Light</option>
-            <option value="dark">テーマ: Dark</option>
-          </select>
         </div>
       </div>
     </header>
@@ -525,22 +540,15 @@
     if (!/^https?:\/\//i.test(rawCsv) && !rawCsv.startsWith("/")) {
       csvUrl = `/${rawCsv.replace(/^\.?\//, "")}`;
     }
-    const rankColors = { S: "#e11d48", A: "#f97316", B: "#0ea5e9", C: "#94a3b8" };
     const map = L.map("map", {
       center: [35.681236, 139.767125],
       zoom: 11,
       preferCanvas: true,
     });
-    const tileLayers = {
-      light: L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
-        attribution: "&copy; OpenStreetMap & CARTO",
-        maxZoom: 19,
-      }),
-      dark: L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-        attribution: "&copy; OpenStreetMap & CARTO",
-        maxZoom: 19,
-      }),
-    };
+    L.tileLayer("https://stamen-tiles.a.ssl.fastly.net/toner/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap contributors &copy; Stamen Design",
+      maxZoom: 19,
+    }).addTo(map);
     const tokyoBounds = {
       minLat: 35,
       maxLat: 36,
@@ -552,7 +560,6 @@
         lat >= tokyoBounds.minLat && lat <= tokyoBounds.maxLat &&
         lng >= tokyoBounds.minLng && lng <= tokyoBounds.maxLng;
     }
-    tileLayers.light.addTo(map);
     const cluster = L.markerClusterGroup({
       chunkedLoading: true,
       spiderfyOnMaxZoom: true,
@@ -578,14 +585,13 @@
     let currentSuggestions = [];
 
     const toast = document.getElementById("toast");
-    const genreSelect = document.getElementById("genre-select");
+    const genreChips = document.getElementById("genre-chips");
     const priceSelect = document.getElementById("price-select");
     const filterToggle = document.getElementById("filter-toggle");
     const filterPanel = document.getElementById("filter-panel");
     const geoButton = document.getElementById("geo-button");
     const geocodeInput = document.getElementById("geocode-input");
     const geocodeButton = document.getElementById("geocode-button");
-    const themeSelect = document.getElementById("theme-select");
     const searchSuggestions = document.getElementById("search-suggestions");
     const updatedSecondary = document.getElementById("updated-secondary");
       const countSecondary = document.getElementById("count-secondary");
@@ -593,7 +599,7 @@
       const shareFb = document.getElementById("share-fb");
       const supportLink = document.getElementById("support-link");
       const contactLink = document.getElementById("contact-link");
-      let rankTotals = { S: 0, A: 0, B: 0, C: 0 };
+    let activeGenre = "";
     let userMarker = null;
     let userCircle = null;
     let geocodeMarker = null;
@@ -783,9 +789,6 @@
     function createPopup(row) {
       const rating = row.rating ? `★${row.rating} (${row.review_count || 0})` : "";
       const notes = row.notes ? `<div style="margin-top:4px; color:#cbd5e1;">${row.notes}</div>` : "";
-      const rankBadge = row.carnivore_rank
-        ? `<span class="rank-badge" style="background:${rankColors[row.carnivore_rank] || "#cbd5e1"}">${row.carnivore_rank}</span>`
-        : "";
       const normalizedGenre = normalizeGenreText(row.genre || "");
       const genres = normalizedGenre ? `<div style="color:#cbd5e1; margin-top:4px;">${normalizedGenre}</div>` : "";
       const reviewBadge = row.review_count
@@ -812,17 +815,15 @@
         ? `<div style="margin-top:4px; color:#cbd5e1; font-size:12px;">${budgetParts.join(" / ")}</div>`
         : "";
       const urlButton = row.url
-        ? `<a href="${row.url}" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; gap:6px; padding:8px 10px; background:${rankColors[row.carnivore_rank] || "#f97316"}; color:#0f172a; border-radius:8px; text-decoration:none; font-weight:700;">店舗ページ</a>`
+        ? `<a href="${row.url}" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; gap:6px; padding:8px 10px; background:var(--accent); color:#0f172a; border-radius:8px; text-decoration:none; font-weight:700;">店舗ページ</a>`
         : "";
       const lat = parseFloat(row.lat);
       const lng = parseFloat(row.lng);
       let mapsButtons = "";
       if (Number.isFinite(lat) && Number.isFinite(lng)) {
         const dest = `${lat},${lng}`;
-        const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(dest)}`;
         const dirUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest)}`;
         mapsButtons = `
-          <a href="${mapsUrl}" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; padding:6px 8px; border-radius:8px; background:rgba(15,23,42,0.9); color:#e2e8f0; font-size:12px; text-decoration:none;">Googleマップで開く</a>
           <a href="${dirUrl}" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; padding:6px 8px; border-radius:8px; background:rgba(15,23,42,0.9); color:#e2e8f0; font-size:12px; text-decoration:none;">経路検索</a>
         `;
       }
@@ -830,7 +831,6 @@
         <div style="min-width: 180px;">
           <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
             <div style="font-weight:700; margin-bottom:4px;">${row.name || "名称不明"}</div>
-            ${rankBadge}
           </div>
           <div style="color:#cbd5e1;">${row.address || "住所不明"}</div>
           ${genres}
@@ -857,8 +857,6 @@
       if (!inTokyoBounds(lat, lng)) {
         return;
       }
-      const rank = row.carnivore_rank || "C";
-      rankTotals[rank] = (rankTotals[rank] || 0) + 1;
       row.lat = lat;
       row.lng = lng;
       const genreText = normalizeGenreText(row.genre || "");
@@ -866,8 +864,7 @@
         allGenreCounts.set(genreText, (allGenreCounts.get(genreText) || 0) + 1);
       }
       const priceInfo = getPriceInfoFromRow(row);
-      const marker = L.marker([lat, lng], { icon: iconForRow(row), rank });
-      marker.rank = rank;
+      const marker = L.marker([lat, lng], { icon: iconForRow(row) });
       marker.meta = {
         name: row.name || "",
         address: row.address || "",
@@ -883,7 +880,7 @@
         marker,
       });
       if (allGenreCounts.size) {
-        populateGenreOptionsFromCounts(allGenreCounts);
+        populateGenreChipsFromCounts(allGenreCounts);
       }
       if (countSecondary) {
         countSecondary.textContent = `${markers.length} 件`;
@@ -944,33 +941,26 @@
     }
 
     function applyFilter() {
-      const allowed = Array.from(document.querySelectorAll('input[data-rank]'))
-        .filter(cb => cb.checked)
-        .map(cb => cb.getAttribute("data-rank"));
       const bounds = map.getBounds();
       cluster.clearLayers();
-      const visibleByRank = { S: 0, A: 0, B: 0, C: 0 };
       let visible = 0;
-      const selectedGenre = (genreSelect.value || "").trim().toLowerCase();
+      const selectedGenre = (activeGenre || "").trim().toLowerCase();
       const priceKey = priceSelect ? (priceSelect.value || "").trim() : "";
       markers.forEach(marker => {
-        const rank = marker.rank || marker.options.rank || "C";
         const meta = marker.meta || {};
         const latLng = marker.getLatLng();
         if (!bounds.contains(latLng)) return;
-        const genreOk = !selectedGenre || (meta.genreText || "").toLowerCase().includes(selectedGenre);
+        const genreOk = !selectedGenre || (meta.genreText || "").toLowerCase() === selectedGenre;
         const priceOk = priceMatches(priceKey, meta);
-        if (!allowed.includes(rank) || !genreOk || !priceOk) return;
+        if (!genreOk || !priceOk) return;
         cluster.addLayer(marker);
-        visibleByRank[rank] = (visibleByRank[rank] || 0) + 1;
         visible += 1;
       });
-      showToast(`表示中 ${visible} 件 / ランク: ${allowed.join(", ")}`);
+      showToast(`表示中 ${visible} 件`);
     }
 
     async function loadCsv() {
       showToast("CSV を読み込み中…");
-      rankTotals = { S: 0, A: 0, B: 0, C: 0 };
       try {
         const candidateUrls = [];
         if (/^https?:\/\//i.test(csvUrl)) {
@@ -1018,15 +1008,12 @@
           const lat = parseFloat(row.lat);
           const lng = parseFloat(row.lng);
           if (Number.isFinite(lat) && Number.isFinite(lng) && inTokyoBounds(lat, lng)) {
-            const rank = row.carnivore_rank || "C";
-            rankTotals[rank] = (rankTotals[rank] || 0) + 1;
             const genreText = normalizeGenreText(row.genre || "");
             if (genreText) {
               allGenreCounts.set(genreText, (allGenreCounts.get(genreText) || 0) + 1);
             }
             const priceInfo = getPriceInfoFromRow(row);
-      const marker = L.marker([lat, lng], { icon: iconForRow(row), rank });
-            marker.rank = rank; // keep rank on instance for filtering/legend
+      const marker = L.marker([lat, lng], { icon: iconForRow(row) });
             marker.meta = {
               name: row.name || "",
               address: row.address || "",
@@ -1051,7 +1038,7 @@
           countSecondary.textContent = `${added} 件`;
         }
         if (allGenreCounts.size) {
-          populateGenreOptionsFromCounts(allGenreCounts);
+          populateGenreChipsFromCounts(allGenreCounts);
         }
         showToast(`読み込み完了: ${added} 件`);
         applyFilter();
@@ -1064,17 +1051,13 @@
       }
     }
 
-    document.querySelectorAll('input[data-rank]').forEach(cb => cb.addEventListener("change", applyFilter));
-    genreSelect.addEventListener("change", () => {
-      applyFilter();
-    });
     if (priceSelect) {
       priceSelect.addEventListener("change", applyFilter);
     }
     geocodeButton.addEventListener("click", async () => {
       const q = geocodeInput.value.trim();
       if (!q) {
-        showToast("住所を入力してください");
+        showToast("地名または店名を入力してください");
         return;
       }
       // サジェストがあれば優先してジャンプ
@@ -1087,7 +1070,7 @@
           return;
         }
       }
-      showToast("住所を検索中…");
+      showToast("地名を検索中…");
       try {
         const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=jp&q=${encodeURIComponent(q)}`;
         const res = await fetch(url, { headers: { "Accept-Language": "ja" } });
@@ -1105,7 +1088,13 @@
           return;
         }
         if (geocodeMarker) map.removeLayer(geocodeMarker);
-        geocodeMarker = L.marker([lat, lon], { icon: iconForRank("A") }).addTo(map);
+        geocodeMarker = L.circleMarker([lat, lon], {
+          radius: 10,
+          color: "#ec4899",
+          weight: 2,
+          fillColor: "#f9a8d4",
+          fillOpacity: 0.4,
+        }).addTo(map);
         map.setView([lat, lon], 15);
         showToast(`移動しました: ${hit.display_name || q}`);
         trackEvent("geocode_search", { location: "header" });
@@ -1143,7 +1132,13 @@
           if (userCircle) {
             map.removeLayer(userCircle);
           }
-          userMarker = L.marker([latitude, longitude], { icon: iconForRank("C") });
+          userMarker = L.circleMarker([latitude, longitude], {
+            radius: 8,
+            color: "#22d3ee",
+            weight: 2,
+            fillColor: "#22d3ee",
+            fillOpacity: 0.5,
+          });
           userCircle = L.circle([latitude, longitude], { radius: accuracy || 120, color: "#0ea5e9", fillOpacity: 0.1 });
           userMarker.addTo(map);
           userCircle.addTo(map);
@@ -1154,30 +1149,49 @@
         { enableHighAccuracy: true, timeout: 10000 }
       );
     });
-    themeSelect.addEventListener("change", () => {
-      const theme = themeSelect.value || "light";
-      Object.values(tileLayers).forEach(layer => map.removeLayer(layer));
-      const layer = tileLayers[theme] || tileLayers.light;
-      layer.addTo(map);
-    });
     loadCsv();
 
-    function populateGenreOptionsFromCounts(genreCounts) {
+    function populateGenreChipsFromCounts(genreCounts) {
+      if (!genreChips) return;
       const entries = Array.from(genreCounts.entries()).filter(([, count]) => count > 0);
       const sorted = entries.sort((a, b) => a[0].localeCompare(b[0], "ja"));
-      const previous = genreSelect.value;
-      const options = ['<option value="">ジャンル: すべて</option>'].concat(
-        sorted.map(([name, count]) => `<option value="${name}">${name} (${count})</option>`)
-      );
-      genreSelect.innerHTML = options.join("");
-      if (previous) {
-        const exists = sorted.some(([name]) => name === previous);
-        if (exists) {
-          genreSelect.value = previous;
-        } else {
-          genreSelect.value = "";
+      genreChips.innerHTML = "";
+
+      const createChip = (genreKey, label, iconUrl) => {
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = "genre-chip";
+        chip.dataset.genre = genreKey || "";
+        if (iconUrl) {
+          const img = document.createElement("img");
+          img.src = iconUrl;
+          img.alt = label;
+          chip.appendChild(img);
         }
-      }
+        const text = document.createElement("span");
+        text.textContent = label;
+        chip.appendChild(text);
+        chip.addEventListener("click", () => {
+          activeGenre = chip.dataset.genre || "";
+          Array.from(genreChips.querySelectorAll(".genre-chip")).forEach(el => el.classList.remove("is-active"));
+          chip.classList.add("is-active");
+          applyFilter();
+        });
+        if (!activeGenre && !genreKey) {
+          chip.classList.add("is-active");
+        } else if (activeGenre && genreKey && activeGenre === genreKey) {
+          chip.classList.add("is-active");
+        }
+        genreChips.appendChild(chip);
+      };
+
+      // 「すべて」チップ
+      createChip("", "ジャンル: すべて", null);
+
+      sorted.forEach(([name]) => {
+        const iconUrl = genreIcons[name] || null;
+        createChip(name, name, iconUrl);
+      });
     }
 
     function priceMatches(priceKey, meta) {

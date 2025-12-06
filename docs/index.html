@@ -26,17 +26,17 @@
           crossorigin="anonymous"></script>
   <style>
     :root {
-      --bg: #0f172a;
+      --bg: #000000;
       --panel: rgba(255, 255, 255, 0.08);
       --text: #e2e8f0;
       --muted: #94a3b8;
-      --accent: #f97316;
+      --accent: #ec4899;
     }
     * { box-sizing: border-box; }
     body, html { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: "Inter","Noto Sans JP",sans-serif; }
     .hero {
       padding: 40px 18px;
-      background: radial-gradient(circle at 20% 20%, rgba(249, 115, 22, 0.08), transparent 35%),
+      background: radial-gradient(circle at 20% 20%, rgba(236, 72, 153, 0.12), transparent 35%),
                   radial-gradient(circle at 80% 0%, rgba(14, 165, 233, 0.1), transparent 30%),
                   var(--bg);
     }
@@ -60,7 +60,7 @@
       font-weight: 700;
       color: #0f172a;
       background: var(--accent);
-      box-shadow: 0 10px 30px rgba(249,115,22,0.35);
+      box-shadow: 0 10px 30px rgba(236,72,153,0.35);
     }
     .pill { display: inline-block; padding: 4px 8px; border-radius: 999px; background: rgba(255,255,255,0.08); color: var(--muted); font-size: 12px; }
     ul { padding-left: 18px; color: var(--muted); line-height: 1.6; }
@@ -71,7 +71,7 @@
     <div class="container">
       <p class="pill">TOKYO MEAT MAP</p>
       <h1>都内の“肉に本気”なお店をマッピング</h1>
-      <p>ホットペッパーから取得した焼肉・ステーキ等の肉系店舗をスコアリングし、S/Aランクを中心に地図表示。毎回の取得結果はCSVに出力され、GitHub Pagesで確認できます。</p>
+      <p>ホットペッパーから取得した焼肉・ステーキ等の肉系店舗を集約し、地図上で一覧表示します。毎回の取得結果はCSVに出力され、GitHub Pagesで確認できます。</p>
       <a class="btn" href="./map_demo.html?csv=output/meatmap.csv">マップを開く</a>
     </div>
   </div>

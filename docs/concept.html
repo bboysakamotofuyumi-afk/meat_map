@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>サイト概要・コンセプト | TOKYO MEAT MAP</title>
-  <meta name="description" content="TOKYO MEAT MAP のコンセプト、ランク基準、データソース、更新方針、広告/収益化方針をまとめたページです。">
+  <meta name="description" content="TOKYO MEAT MAP のコンセプト、データソース、更新方針、広告/収益化方針をまとめたページです。">
   <style>
     body {
       margin: 0;
       font-family: "Inter", "Noto Sans JP", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #0f172a;
+      background: #000000;
       color: #e2e8f0;
       line-height: 1.7;
     }
@@ -26,7 +26,7 @@
     }
     h2 { margin-top: 24px; font-size: 18px; }
     p, li { color: #cbd5e1; }
-    a { color: #f97316; }
+    a { color: #ec4899; }
     .box {
       margin-top: 12px;
       padding: 12px 14px;
@@ -43,18 +43,7 @@
   <main>
     <section>
       <h2>目的</h2>
-      <p>東京の「肉料理に強い店」を集め、S/Aランク中心でマップ表示する個人開発のデモサイトです。検索・ジャンル絞り込み・住所検索・現在地表示などの基本的なマップ機能を提供します。</p>
-    </section>
-
-    <section>
-      <h2>ランク基準（概要）</h2>
-      <ul>
-        <li>対象ジャンル: 焼肉 / ホルモン / ステーキ / シュラスコ / ジビエ など肉メインの飲食店</li>
-        <li>スコア要素: ジャンル、キャッチコピー/説明の肉ワード、評価・レビュー数</li>
-        <li>ランク閾値（例）: S=80以上、A=60以上、B=45以上、C=それ未満</li>
-        <li>現在は S/A を公開。B/C は更新環境が整い次第拡張予定</li>
-      </ul>
-      <div class="box">詳細ロジックは `meatmap/scoring.py` を参照してください。</div>
+      <p>東京の「肉料理に強い店」を集めてマッピングする個人開発のデモサイトです。検索・ジャンル絞り込み・地名検索・現在地表示などの基本的なマップ機能を提供します。</p>
     </section>
 
     <section>
