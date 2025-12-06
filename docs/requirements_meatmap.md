@@ -475,6 +475,10 @@
       - 韓国「https://www.irasutoya.com/2020/09/blog-post_89.html」
       - クラスタ・その他「https://www.irasutoya.com/2013/02/blog-post_3383.html」
 
+  - tabelog ソースのジャンル再分類
+    - ../https_learn/data/raw/*_map.html の JSON-LD (servesCuisine) / 店舗情報テーブル「ジャンル」 / RC コード (t_category2/3) を使用し、tabelog 行だけ genre を再分類するスクリプトを追加
+    - 再分類ロジック自体は normalize_genre.py の classify_row を再利用し、店名優先のルール（店名 vs ジャンルの衝突時は店名が勝つ）を維持する
+
 
   - ogp.png
     - 以下の画像を横並びにしてその上から大きく「MEAT MAP」という文字を重ねたものにしたい

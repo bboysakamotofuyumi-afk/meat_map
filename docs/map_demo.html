@@ -664,12 +664,17 @@
     }
 
     function getPriceInfoFromRow(row) {
-      const text = (row.notes || "").toString();
-      const lunchMatch = text.match(/(?:L|ランチ)[^0-9]*([0-9]{3,5})/);
-      const dinnerMatch = text.match(/(?:D|ディナー)[^0-9]*([0-9]{3,5})/);
+      const lunchRaw = row.lunch_budget_max;
+      const dinnerRaw = row.dinner_budget_max;
+      const lunchVal = lunchRaw !== undefined && lunchRaw !== null && `${lunchRaw}` !== ""
+        ? Number(lunchRaw)
+        : NaN;
+      const dinnerVal = dinnerRaw !== undefined && dinnerRaw !== null && `${dinnerRaw}` !== ""
+        ? Number(dinnerRaw)
+        : NaN;
       return {
-        lunchPrice: lunchMatch ? parseInt(lunchMatch[1], 10) : null,
-        dinnerPrice: dinnerMatch ? parseInt(dinnerMatch[1], 10) : null,
+        lunchPrice: Number.isFinite(lunchVal) ? lunchVal : null,
+        dinnerPrice: Number.isFinite(dinnerVal) ? dinnerVal : null,
       };
     }
 
@@ -786,6 +791,26 @@
       const reviewBadge = row.review_count
         ? `<span style="display:inline-block; background:rgba(255,255,255,0.08); color:#cbd5e1; padding:4px 8px; border-radius:8px; font-size:12px;">${rating || "未評価"}</span>`
         : "";
+      const formatBudget = (minVal, maxVal) => {
+        const isNum = (v) => typeof v === "number" && Number.isFinite(v);
+        if (!isNum(minVal) && !isNum(maxVal)) return "";
+        const fmt = (v) => Number(v).toLocaleString("ja-JP");
+        if (!isNum(minVal)) {
+          return `～￥${fmt(maxVal)}`;
+        }
+        if (!isNum(maxVal)) {
+          return `￥${fmt(minVal)}～`;
+        }
+        return `￥${fmt(minVal)}～￥${fmt(maxVal)}`;
+      };
+      const lunchBudgetText = formatBudget(row.lunch_budget_min, row.lunch_budget_max);
+      const dinnerBudgetText = formatBudget(row.dinner_budget_min, row.dinner_budget_max);
+      const budgetParts = [];
+      if (dinnerBudgetText) budgetParts.push(`ディナー ${dinnerBudgetText}`);
+      if (lunchBudgetText) budgetParts.push(`ランチ ${lunchBudgetText}`);
+      const budgets = budgetParts.length
+        ? `<div style="margin-top:4px; color:#cbd5e1; font-size:12px;">${budgetParts.join(" / ")}</div>`
+        : "";
       const urlButton = row.url
         ? `<a href="${row.url}" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; gap:6px; padding:8px 10px; background:${rankColors[row.carnivore_rank] || "#f97316"}; color:#0f172a; border-radius:8px; text-decoration:none; font-weight:700;">店舗ページ</a>`
         : "";
@@ -809,6 +834,7 @@
           </div>
           <div style="color:#cbd5e1;">${row.address || "住所不明"}</div>
           ${genres}
+          ${budgets}
           <div style="margin-top:4px; display:flex; gap:6px; align-items:center;">${reviewBadge}</div>
           ${notes}
           <div style="margin-top:8px; display:flex; flex-wrap:wrap; gap:6px;">
