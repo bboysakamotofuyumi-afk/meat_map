@@ -33,8 +33,8 @@
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="icon" type="image/png" href="assets/new_pins/processed/niku.png" />
-  <link rel="apple-touch-icon" href="assets/new_pins/processed/niku.png" />
+  <link rel="icon" type="image/png" href="assets/new_pins/processed/meats.png" />
+  <link rel="apple-touch-icon" href="assets/new_pins/processed/meats.png" />
   <meta name="theme-color" content="#000000" />
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9721987325108836"
           crossorigin="anonymous"></script>
@@ -224,7 +224,7 @@
       bottom: 5px;
       right: 5px;
       background: rgba(255, 255, 255, 0.9);
-      color: #111827;
+      color: var(--accent);
       font-weight: 800;
       padding: 2px 6px;
       border-radius: 10px;
@@ -594,7 +594,7 @@
         const isAllGenreSelected = typeof activeGenre === "string" && activeGenre === "";
         let iconUrl = "./assets/pins/cluster.png";
         if (isAllGenreSelected) {
-          iconUrl = "./assets/new_pins/processed/niku.png";
+          iconUrl = "./assets/new_pins/processed/meats.png";
         }
         if (typeof activeGenre === "string" && activeGenre && typeof genreIcons === "object") {
           const candidate = genreIcons[activeGenre];
@@ -802,7 +802,7 @@
       "焼き鳥・もつ焼き": "./assets/new_pins/processed/yakitori.png",
       "しゃぶしゃぶ": "./assets/new_pins/processed/syabusyabu.png",
       "韓国": "./assets/new_pins/processed/kankoku.png",
-      "その他": "./assets/pins/other.png",
+      "その他": "./assets/new_pins/processed/others.png",
     };
 
     function normalizeGenreText(genre) {
@@ -1165,11 +1165,9 @@
         let displayLabel = label;
         if (!genreKey) {
           displayLabel = "All";
-        } else if (genreKey === "その他") {
-          displayLabel = "other";
         }
-        const showText = !genreKey || genreKey === "その他";
-        if (iconUrl && genreKey && genreKey !== "その他") {
+        const showText = !genreKey && !iconUrl;
+        if (iconUrl) {
           const img = document.createElement("img");
           img.src = iconUrl;
           img.alt = displayLabel;
@@ -1201,7 +1199,7 @@
       };
 
       // 「All」チップ（全ジャンル）
-      createChip("", "All", null);
+      createChip("", "All", "./assets/new_pins/processed/meats.png");
 
       sorted.forEach(([name]) => {
         const iconUrl = genreIcons[name] || null;

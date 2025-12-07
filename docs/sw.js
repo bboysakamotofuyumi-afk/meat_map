@@ -4,7 +4,7 @@ const ASSETS = [
   "./manifest.webmanifest",
   "./sw.js",
   "./ogp.png",
-  "./assets/new_pins/processed/niku.png",
+  "./assets/new_pins/processed/meats.png",
   "./assets/pins/steak.png",
   "./assets/pins/other.png",
   "./assets/pins/yakiniku.png",
