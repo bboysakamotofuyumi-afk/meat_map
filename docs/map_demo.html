@@ -466,12 +466,6 @@
       <div id="filter-panel" class="filter-panel">
         <div class="controls">
           <div id="genre-chips" class="genre-chips"></div>
-          <select id="price-select" class="control-select">
-            <option value="">予算: 指定なし</option>
-            <option value="lunch-2000">ランチ ~2,000円</option>
-            <option value="dinner-5000">ディナー ~5,000円</option>
-            <option value="dinner-8000">ディナー ~8,000円</option>
-          </select>
         </div>
         <div class="controls">
           <div class="search-container">
@@ -623,7 +617,6 @@
 
     const toast = document.getElementById("toast");
     const genreChips = document.getElementById("genre-chips");
-    const priceSelect = document.getElementById("price-select");
     const filterToggle = document.getElementById("filter-toggle");
     const filterPanel = document.getElementById("filter-panel");
     const geoButton = document.getElementById("geo-button");
@@ -706,17 +699,12 @@
     }
 
     function getPriceInfoFromRow(row) {
-      const lunchRaw = row.lunch_budget_max;
-      const dinnerRaw = row.dinner_budget_max;
-      const lunchVal = lunchRaw !== undefined && lunchRaw !== null && `${lunchRaw}` !== ""
-        ? Number(lunchRaw)
-        : NaN;
-      const dinnerVal = dinnerRaw !== undefined && dinnerRaw !== null && `${dinnerRaw}` !== ""
-        ? Number(dinnerRaw)
+      const avgRaw = row.avg_dinner_budget;
+      const avgVal = avgRaw !== undefined && avgRaw !== null && `${avgRaw}` !== ""
+        ? Number(avgRaw)
         : NaN;
       return {
-        lunchPrice: Number.isFinite(lunchVal) ? lunchVal : null,
-        dinnerPrice: Number.isFinite(dinnerVal) ? dinnerVal : null,
+        avgDinnerPrice: Number.isFinite(avgVal) ? avgVal : null,
       };
     }
 
@@ -805,6 +793,21 @@
       "その他": "./assets/new_pins/processed/others.png",
     };
 
+    const priceBadgeIcons = {
+      bronze: "./assets/new_pins/processed/price_bronze.png",
+      silver: "./assets/new_pins/processed/price_silver.png",
+      gold: "./assets/new_pins/processed/price_gold.png",
+      platinum: "./assets/new_pins/processed/price_platinum.png",
+    };
+
+    function priceBadgeFor(avgPrice) {
+      if (!Number.isFinite(avgPrice) || avgPrice == null) return null;
+      if (avgPrice <= 3000) return priceBadgeIcons.bronze;
+      if (avgPrice <= 5000) return priceBadgeIcons.silver;
+      if (avgPrice <= 10000) return priceBadgeIcons.gold;
+      return priceBadgeIcons.platinum;
+    }
+
     function normalizeGenreText(genre) {
       const g = (genre || "").trim();
       if (/焼き鳥|もつ焼き/.test(g)) return "焼き鳥・もつ焼き";
@@ -813,12 +816,29 @@
       return g;
     }
 
-    function iconForRow(row) {
+    function iconForRow(row, priceInfo) {
       const genreText = normalizeGenreText(row.genre || "");
       const iconUrl = genreIcons[genreText] || genreIcons["その他"];
-      return L.icon({
-        iconUrl,
-        iconSize: [48, 48],
+      const baseSize = [48, 48];
+      const badgeUrl = priceBadgeFor(priceInfo && priceInfo.avgDinnerPrice);
+      if (!badgeUrl) {
+        return L.icon({
+          iconUrl,
+          iconSize: baseSize,
+          iconAnchor: [24, 44],
+          popupAnchor: [0, -36],
+        });
+      }
+      const html = `
+        <div style="position: relative; width:${baseSize[0]}px; height:${baseSize[1]}px;">
+          <img src="${iconUrl}" style="width:100%;height:100%;display:block;" alt="marker">
+          <img src="${badgeUrl}" style="position:absolute;right:-4px;bottom:-4px;width:20px;height:20px;" alt="price-badge">
+        </div>
+      `;
+      return L.divIcon({
+        html,
+        className: "",
+        iconSize: baseSize,
         iconAnchor: [24, 44],
         popupAnchor: [0, -36],
       });
@@ -832,25 +852,14 @@
       const reviewBadge = row.review_count
         ? `<span style="display:inline-block; background:rgba(255,255,255,0.08); color:#cbd5e1; padding:4px 8px; border-radius:8px; font-size:12px;">${rating || "未評価"}</span>`
         : "";
-      const formatBudget = (minVal, maxVal) => {
-        const isNum = (v) => typeof v === "number" && Number.isFinite(v);
-        if (!isNum(minVal) && !isNum(maxVal)) return "";
-        const fmt = (v) => Number(v).toLocaleString("ja-JP");
-        if (!isNum(minVal)) {
-          return `～￥${fmt(maxVal)}`;
-        }
-        if (!isNum(maxVal)) {
-          return `￥${fmt(minVal)}～`;
-        }
-        return `￥${fmt(minVal)}～￥${fmt(maxVal)}`;
+      const formatAvgBudget = (avgVal) => {
+        if (typeof avgVal !== "number" || !Number.isFinite(avgVal)) return "";
+        const fmt = Number(avgVal).toLocaleString("ja-JP");
+        return `~￥${fmt}`;
       };
-      const lunchBudgetText = formatBudget(row.lunch_budget_min, row.lunch_budget_max);
-      const dinnerBudgetText = formatBudget(row.dinner_budget_min, row.dinner_budget_max);
-      const budgetParts = [];
-      if (dinnerBudgetText) budgetParts.push(`ディナー ${dinnerBudgetText}`);
-      if (lunchBudgetText) budgetParts.push(`ランチ ${lunchBudgetText}`);
-      const budgets = budgetParts.length
-        ? `<div style="margin-top:4px; color:#cbd5e1; font-size:12px;">${budgetParts.join(" / ")}</div>`
+      const avgBudgetText = formatAvgBudget(row.avg_dinner_budget);
+      const budgets = avgBudgetText
+        ? `<div style="margin-top:4px; color:#cbd5e1; font-size:12px;">ディナー目安 ${avgBudgetText}</div>`
         : "";
       const urlButton = row.url
         ? `<a href="${row.url}" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; gap:6px; padding:8px 10px; background:var(--accent); color:#0f172a; border-radius:8px; text-decoration:none; font-weight:700;">店舗ページ</a>`
@@ -902,13 +911,12 @@
         allGenreCounts.set(genreText, (allGenreCounts.get(genreText) || 0) + 1);
       }
       const priceInfo = getPriceInfoFromRow(row);
-      const marker = L.marker([lat, lng], { icon: iconForRow(row) });
+      const marker = L.marker([lat, lng], { icon: iconForRow(row, priceInfo) });
       marker.meta = {
         name: row.name || "",
         address: row.address || "",
         genreText,
-        lunchPrice: priceInfo.lunchPrice,
-        dinnerPrice: priceInfo.dinnerPrice,
+        avgDinnerPrice: priceInfo.avgDinnerPrice,
       };
       marker.bindPopup(createPopup(row));
       markers.push(marker);
@@ -983,14 +991,12 @@
       cluster.clearLayers();
       let visible = 0;
       const selectedGenre = (activeGenre || "").trim().toLowerCase();
-      const priceKey = priceSelect ? (priceSelect.value || "").trim() : "";
       markers.forEach(marker => {
         const meta = marker.meta || {};
         const latLng = marker.getLatLng();
         if (!bounds.contains(latLng)) return;
         const genreOk = !selectedGenre || (meta.genreText || "").toLowerCase() === selectedGenre;
-        const priceOk = priceMatches(priceKey, meta);
-        if (!genreOk || !priceOk) return;
+        if (!genreOk) return;
         cluster.addLayer(marker);
         visible += 1;
       });
@@ -1051,13 +1057,12 @@
               allGenreCounts.set(genreText, (allGenreCounts.get(genreText) || 0) + 1);
             }
             const priceInfo = getPriceInfoFromRow(row);
-      const marker = L.marker([lat, lng], { icon: iconForRow(row) });
+            const marker = L.marker([lat, lng], { icon: iconForRow(row, priceInfo) });
             marker.meta = {
               name: row.name || "",
               address: row.address || "",
               genreText,
-              lunchPrice: priceInfo.lunchPrice,
-              dinnerPrice: priceInfo.dinnerPrice,
+              avgDinnerPrice: priceInfo.avgDinnerPrice,
             };
             marker.bindPopup(createPopup(row));
             markers.push(marker);
@@ -1089,9 +1094,6 @@
       }
     }
 
-    if (priceSelect) {
-      priceSelect.addEventListener("change", applyFilter);
-    }
     geocodeInput.addEventListener("input", () => {
       renderSuggestions(geocodeInput.value || "");
     });
