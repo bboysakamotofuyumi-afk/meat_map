@@ -23,6 +23,9 @@ DEFAULT_FIELDS: Sequence[str] = [
     "sources",
     "url",
     "notes",
+    "budget_lunch",
+    "budget_dinner",
+    "avg_dinner_budget",
 ]
 
 
@@ -60,4 +63,7 @@ def record_to_row(record: StoreRecord) -> dict:
         "sources": ", ".join(sorted(record.sources)),
         "url": record.url,
         "notes": record.notes,
+        "budget_lunch": record.budget_lunch,
+        "budget_dinner": record.budget_dinner,
+        "avg_dinner_budget": record.budget_dinner if record.budget_dinner is not None else record.budget_lunch,
     }

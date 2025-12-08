@@ -698,13 +698,32 @@
         .toLowerCase();
     }
 
+    function toPriceNumber(value) {
+      if (value === undefined || value === null) return null;
+      const cleaned = String(value).replace(/[^\d.-]/g, "");
+      if (!cleaned) return null;
+      const num = Number(cleaned);
+      return Number.isFinite(num) ? num : null;
+    }
+
+    function averageBudget(minVal, maxVal) {
+      const min = toPriceNumber(minVal);
+      const max = toPriceNumber(maxVal);
+      if (min == null && max == null) return null;
+      if (min == null) return max;
+      if (max == null) return min;
+      return Math.round((min + max) / 2);
+    }
+
     function getPriceInfoFromRow(row) {
-      const avgRaw = row.avg_dinner_budget;
-      const avgVal = avgRaw !== undefined && avgRaw !== null && `${avgRaw}` !== ""
-        ? Number(avgRaw)
-        : NaN;
+      const avgBudget = toPriceNumber(row.avg_dinner_budget);
+      const rangeAvg = averageBudget(row.dinner_budget_min, row.dinner_budget_max);
+      const directDinner = toPriceNumber(row.budget_dinner);
+      const lunchRangeAvg = averageBudget(row.lunch_budget_min, row.lunch_budget_max);
+      const lunchSingle = toPriceNumber(row.budget_lunch);
+      const avgDinnerPrice = avgBudget ?? rangeAvg ?? directDinner ?? lunchRangeAvg ?? lunchSingle ?? null;
       return {
-        avgDinnerPrice: Number.isFinite(avgVal) ? avgVal : null,
+        avgDinnerPrice,
       };
     }
 
@@ -844,7 +863,7 @@
       });
     }
 
-    function createPopup(row) {
+    function createPopup(row, priceInfo) {
       const rating = row.rating ? `★${row.rating} (${row.review_count || 0})` : "";
       const notes = row.notes ? `<div style="margin-top:4px; color:#cbd5e1;">${row.notes}</div>` : "";
       const normalizedGenre = normalizeGenreText(row.genre || "");
@@ -853,11 +872,14 @@
         ? `<span style="display:inline-block; background:rgba(255,255,255,0.08); color:#cbd5e1; padding:4px 8px; border-radius:8px; font-size:12px;">${rating || "未評価"}</span>`
         : "";
       const formatAvgBudget = (avgVal) => {
-        if (typeof avgVal !== "number" || !Number.isFinite(avgVal)) return "";
-        const fmt = Number(avgVal).toLocaleString("ja-JP");
+        const num = toPriceNumber(avgVal);
+        if (!Number.isFinite(num)) return "";
+        const fmt = Number(num).toLocaleString("ja-JP");
         return `~￥${fmt}`;
       };
-      const avgBudgetText = formatAvgBudget(row.avg_dinner_budget);
+      const avgBudgetText = formatAvgBudget(priceInfo && priceInfo.avgDinnerPrice !== undefined
+        ? priceInfo.avgDinnerPrice
+        : getPriceInfoFromRow(row).avgDinnerPrice);
       const budgets = avgBudgetText
         ? `<div style="margin-top:4px; color:#cbd5e1; font-size:12px;">ディナー目安 ${avgBudgetText}</div>`
         : "";
@@ -918,7 +940,7 @@
         genreText,
         avgDinnerPrice: priceInfo.avgDinnerPrice,
       };
-      marker.bindPopup(createPopup(row));
+      marker.bindPopup(createPopup(row, priceInfo));
       markers.push(marker);
       searchItems.push({
         name: marker.meta.name,
@@ -1064,7 +1086,7 @@
               genreText,
               avgDinnerPrice: priceInfo.avgDinnerPrice,
             };
-            marker.bindPopup(createPopup(row));
+            marker.bindPopup(createPopup(row, priceInfo));
             markers.push(marker);
             searchItems.push({
               name: marker.meta.name,
