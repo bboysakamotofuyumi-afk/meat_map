@@ -477,6 +477,9 @@
       background: rgba(255, 255, 255, 0.88);
       border-color: rgba(0, 0, 0, 0.08);
     }
+    .genre-chip--others img {
+      filter: brightness(0) contrast(1.2);
+    }
     .genre-chip--others.is-active {
       color: #0f172a;
       background: #f9737a;
@@ -494,40 +497,20 @@
       bottom: -6px;
       display: inline-flex;
       align-items: center;
-      gap: 4px;
-      padding: 2px 6px;
-      border-radius: 8px;
-      font-size: 10px;
+      justify-content: center;
+      padding: 4px 8px;
+      border-radius: 10px;
+      font-size: 11px;
       font-weight: 800;
       box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
       border: 1px solid rgba(255, 255, 255, 0.12);
       color: #0f172a;
       background: linear-gradient(135deg, #ffe2ea 0%, #fcd9e4 100%);
     }
-    .price-badge-note {
-      display: inline-block;
-      width: 12px;
-      height: 8px;
-      border-radius: 2px;
-      border: 1px solid #f59ab0;
-      background: linear-gradient(90deg, #fff7fb 0%, #ffe4ed 100%);
-      box-shadow: 0 0 0 rgba(0,0,0,0.2);
-    }
-    .price-p3k .price-badge-note {
-      box-shadow: 2px 2px 0 rgba(245, 154, 176, 0.6), 4px 4px 0 rgba(245, 154, 176, 0.4);
-    }
-    .price-p5k .price-badge {
-      background: linear-gradient(135deg, #ffe8f0 0%, #ffd3e2 100%);
-    }
-    .price-p10k .price-badge {
-      background: linear-gradient(135deg, #ffe9e6 0%, #ffd2cd 100%);
-    }
-    .price-p10kplus .price-badge {
-      background: linear-gradient(135deg, #ffe2e2 0%, #ffc7c7 100%);
-    }
-    .price-p10kplus .price-badge-note {
-      box-shadow: 2px 2px 0 rgba(245, 154, 176, 0.6), 4px 4px 0 rgba(245, 154, 176, 0.4);
-    }
+    .price-badge.price-p3k { background: linear-gradient(135deg, #ffe2ea 0%, #fcd9e4 100%); }
+    .price-badge.price-p5k { background: linear-gradient(135deg, #ffe8f0 0%, #ffd3e2 100%); }
+    .price-badge.price-p10k { background: linear-gradient(135deg, #ffe9e6 0%, #ffd2cd 100%); }
+    .price-badge.price-p10kplus { background: linear-gradient(135deg, #ffe2e2 0%, #ffc7c7 100%); }
     a { color: var(--accent); }
   </style>
 </head>
@@ -893,20 +876,17 @@
     }
 
     const priceBadgeLabels = {
-      p3k: "¥1k×3",
-      p5k: "¥5k",
-      p10k: "¥10k",
-      p10kplus: "¥10k×3",
+      p3k: "〜¥3k",
+      p5k: "〜¥5k",
+      p10k: "〜¥10k",
+      p10kplus: "¥10k+",
     };
 
     function priceBadgeHtml(tier) {
       if (!tier) return "";
       const label = priceBadgeLabels[tier] || "";
       return `
-        <div class="price-badge price-${tier}">
-          <span class="price-badge-note" aria-hidden="true"></span>
-          <span class="price-badge-text">${label}</span>
-        </div>
+        <div class="price-badge price-${tier}">${label}</div>
       `;
     }
 
