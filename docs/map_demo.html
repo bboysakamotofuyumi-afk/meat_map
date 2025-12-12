@@ -892,10 +892,16 @@
 
     function normalizeGenreText(genre) {
       const g = (genre || "").trim();
-      if (/焼き鳥|もつ焼き/.test(g)) return "焼き鳥・もつ焼き";
-      if (g === "中華") return "その他";
       if (!g) return "その他";
-      return g;
+      if (/焼肉|ホルモン/.test(g)) return "焼肉";
+      if (/ステーキ|鉄板焼/.test(g)) return "ステーキ";
+      if (/シュラスコ|ブラジル/.test(g)) return "シュラスコ";
+      if (/焼き鳥|もつ焼き|もつ焼/.test(g)) return "焼き鳥・もつ焼き";
+      if (/しゃぶしゃぶ|すき焼き/.test(g)) return "しゃぶしゃぶ";
+      if (/韓国/.test(g)) return "韓国";
+      if (/中華/.test(g)) return "その他";
+      // 上記以外は認識外ジャンルとして「その他」に倒す
+      return genreIcons[g] ? g : "その他";
     }
 
     function iconForRow(row, priceInfo) {
