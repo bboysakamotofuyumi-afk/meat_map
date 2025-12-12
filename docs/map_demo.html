@@ -1070,15 +1070,22 @@
       showToast("CSV を読み込み中…");
       try {
         const candidateUrls = [];
+        const bustParam = `_ts=${Date.now()}`;
+        const withBust = (url) => `${url}${url.includes("?") ? "&" : "?"}${bustParam}`;
         if (/^https?:\/\//i.test(csvUrl)) {
+          candidateUrls.push(withBust(csvUrl));
           candidateUrls.push(csvUrl);
         } else {
-          candidateUrls.push(csvUrl); // 例: /output/...
-          candidateUrls.push(csvUrl.replace(/^\//, "./")); // 例: output/...
+          const abs = csvUrl; // 例: /output/...
+          const rel = csvUrl.replace(/^\//, "./"); // 例: output/...
+          candidateUrls.push(withBust(abs));
+          candidateUrls.push(withBust(rel));
+          candidateUrls.push(abs);
+          candidateUrls.push(rel);
         }
         let text = null;
         for (const url of candidateUrls) {
-          const res = await fetch(url);
+          const res = await fetch(url, { cache: "no-store" });
           if (!res.ok) continue;
           text = await res.text();
           break;
