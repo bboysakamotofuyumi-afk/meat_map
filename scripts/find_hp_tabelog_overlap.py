@@ -43,13 +43,22 @@ def normalize_address_key(address: Optional[str]) -> Optional[str]:
     return None
 
 
+def _strip_accents(s: str) -> str:
+    # ローマ字の揺れ（大文字小文字・アクセント）を吸収
+    nkfd = unicodedata.normalize("NFKD", s)
+    return "".join(ch for ch in nkfd if not unicodedata.combining(ch))
+
+
 def normalize_name(name: Optional[str]) -> str:
     if not name:
         return ""
     s = unicodedata.normalize("NFKC", name)
     s = s.replace("本店", "")
     s = s.replace("店", "")
-    s = re.sub(r"[\\s・･.,/()（）［］\\[\\]\\-‐―ー−‐']", "", s)
+    # 記号・空白を除去
+    s = re.sub(r"[\\s・･.,/()（）［］\\[\\]\\-‐―ー−‐'\"、。!！?？＆&]", "", s)
+    # ローマ字は小文字化し、アクセントを除去して揺れを抑える
+    s = _strip_accents(s).lower()
     return s
 
 
