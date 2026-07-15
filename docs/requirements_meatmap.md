@@ -2,33 +2,51 @@
 
 - 要件はこのファイル1本で管理し、ブランチごとの差分も冒頭に追記する。
 - ブランチを切ったら、ブランチ名・日付・差分メモをここに追加する。
-- 現行: make-a-big-promise（MVPベース、差分メモなし）
+- 現行: `main`（GitHub Pages は `main` の `/docs` を配信）
+- `agent/p0-public-hardening`（2026-07-15）: 公開キャッシュ・バックアップを除去し、現行のHot Pepper APIデータを再取得。CSV由来DOMのXSS対策、軽量マーカー化、広告/解析コードと未設定支援リンクの除去、APIキーを含み得る例外の無害化、予算帯解析の修正、現行URL・ポリシー・クレジットの整合、自動公開検査を追加。
+- `agent/p0-public-hardening` 追加差分（2026-07-15）: 店舗数を維持するため、現行のHot Pepper APIデータと旧ローカルデータを重複統合して公開する。旧データは `legacy_unverified` とし、最終確認日、未検証表示、非公式・非提携の注意書きをマップと案内ページへ追加。口コミ・写真・ロゴ・取得元HTMLキャッシュは公開しない。
+- `agent/p0-public-hardening` 出自表現の訂正（2026-07-16）: 公開する店舗候補は食べログから取得したものではない。食べログの情報はローカル環境だけでデータの精度検証に使用し、そのURL、店舗ID、検証情報および入力資料は公開しない。旧店舗候補の一次取得元は現リポジトリの履歴からは特定できないため、公開CSVでは第三者サービス名を出典にせず `legacy_local` として区分する。
+
+## 現在の公開設計（2026-07-16）
+
+- 公開URL: `https://bboysakamotofuyumi-afk.github.io/meat_map/`
+- 公開方式: GitHub Pages の `Deploy from a branch`、`main` / `/docs`。
+- 公開データ: `docs/output/meatmap.csv` のみ。`source_scope=hotpepper,legacy_local` とし、Hot Pepper API由来の現行データと、既存の旧ローカルデータを重複統合する。旧ローカルデータは取得元を表すソース名ではなく、運営者が従前から保有するデータ系列の区分である。件数は `total_records`、旧データのスナップショット日は `legacy_snapshot_at` メタデータを正とする。
+- 統合スナップショット: 8,444件（現行3,721件、`legacy_unverified` 4,723件）。旧公開版8,147件より297件多く、全行に有効な座標を持つ。
+- データ確認状態: 各行に `data_status`（`current` / `legacy_unverified`）と `last_verified_at`（`YYYY-MM-DD`）を必須で持たせる。旧データは内容を再取得・再確認したものとは扱わない。
+- データ系列と確認状態は別に管理する。現行APIで確認できなくなった旧Hot Pepper行は `sources=hotpepper` / `data_status=legacy_unverified` を維持し、有効なHot Pepper店舗URLがあれば公開できる。`legacy_local` だけの行は店舗URLを空欄にする。
+- 件数回帰防止: `scripts/validate_public_site.py` は公開CSVが統合済み基準の8,444件未満、または旧ローカル系譜の `legacy_id` が4,847件未満になった場合をエラーとし、データ減少のまま公開しない。
+- 出自方針: 現行の自動取得元は Hot Pepper API。公開店舗候補は食べログから取得したものではなく、食べログ情報は過去のローカルな精度検証だけに使用した。旧ローカルデータの一次取得元は現リポジトリに記録がなく特定できない。食べログのURL、店舗ID、検証情報は公開CSV・公開ページへ出さない。
+- マップ: ダークテーマ、ジャンル絞り込み、店名検索、現在地表示、店舗ページ・経路リンク。ポップアップには取得元またはデータ区分、取得 / 最終確認日、旧ローカルデータの未検証状態を表示する。`legacy_local` だけの行には店舗ページリンクを表示しない。現行Hot Pepper行に旧ローカルデータも統合した場合は「現行データ + 旧ローカルデータ」と表示し、旧部分がスナップショット日以降未検証であることを明示する。
+- 表示方針: 本サイトがデータ提供元・リンク先の公式または提携サービスではないこと、最新情報は店舗公式情報または店舗へ直接確認することを常時案内する。
+- 広告・寄付・アクセス解析: 未導入。導入前に利用者への案内とポリシー更新を行う。
 
 ## 実行手順（CSV生成の最小フロー）
 
 - 前提: `HOTPEPPER_API_KEY` を環境変数または `.env` に設定。
-- コマンド例: `python -m meatmap.cli --output output/meatmap.csv`
+- コマンド例: `python3 -m meatmap.cli --output output/meatmap.csv`（Hot Pepper API由来の現行データを生成）
 - ランクフィルタ: デフォルトは S/A のみを出力。`--include-rank-b` や `--include-rank-c` で範囲を広げられる。
-- マップデモ: `python -m http.server 8000` などでルートをホストし、`http://localhost:8000/docs/map_demo.html?csv=/output/meatmap.csv` を開くと CSV を地図表示できる（クエリを省略すると `/output/meatmap.csv` を読む）。
-- GitHub Pages 用コピー: `--copy-to-docs` を付けて実行すると `docs/output/meatmap.csv` にもコピーされる（Pagesでそのまま参照可能）。
-- GitHub Pages 公開手順: `docs/README_pages.md` にまとめ。`--copy-to-docs` で CSV を配置 → コミット＆プッシュ → Pages を `/docs` 配信に設定。
-- 現在の状況（2025-11-29時点）:
+- マップデモ: `python3 -m http.server 8000` などでルートをホストし、`http://localhost:8000/docs/map_demo.html?csv=output/meatmap.csv` を開くと CSV を地図表示できる（クエリ省略時も同じ配信用CSVを読む）。
+- GitHub Pages 用コピー: 公開時は現行データと旧データの専用統合処理を通し、検証済みの `docs/output/meatmap.csv` のみを配置する。`--copy-to-docs` によるHot Pepper単独CSVは統合前の入力として扱う。
+- GitHub Pages 公開手順: `docs/README_pages.md` にまとめ。`make csv` で現行データ取得・旧データ統合・公開検証を完了 → PRで差分と件数を確認 → `main` へ反映し、Pages の `/docs` から配信する。
+- 履歴（2025-11-29時点）:
   - CSV: S/A のみを含む `docs/output/meatmap.csv` をコミット済み（先頭に生成時刻と件数のメタ行あり）。
   - マップ: `docs/map_demo.html` はライトタイルがデフォルト。検索・ジャンル・並び替え・住所検索・現在地・リスト表示は有効。CSV取得が失敗した場合はトーストとレジェンドにエラー表示。
-  - Pages: ブランチ `make-a-big-promise` を `/docs` 配信。URLは `https://genkishimura2000.github.io/meat_map/map_demo.html?csv=output/meatmap.csv`（ピンが出ない場合はURLのクエリやCSVパスを要確認）。
+  - Pages: 当時の作業ブランチを `/docs` 配信していた。現在は上記の `main` 配信へ移行済み。
   - 直近の不具合: ダークデフォルト化と複数フォールバックで一時的にピンが出なくなったため、ライトデフォルト＋シンプルなページ相対CSVパスに戻している。
 
 ## 今後の展望・TODO（引き継ぎメモ）
 - データ/更新:
-  - ネットワークが通る環境で `python -m meatmap.cli --output output/meatmap.csv --copy-to-docs --include-rank-b --include-rank-c` を実行し、B/C を含むCSVを更新（現状S/Aのみ）。
+  - ネットワークが通る環境で `make csv` を実行し、S〜Cを含む公開CSVを更新する。
   - HotPepperクライアントにはリトライを実装済み。必要ならレート制御やキャッシュを追加検討。
 - マップ:
   - ダークデフォルトを再導入する場合は CSV 取得成功を優先してパス設計を見直す（ページ相対 + `/meat_map/` 絶対 + raw の順で試すなど）。
   - 検索・住所検索・並び替え・リストは動作済み。レジェンド/トーストでエラーを可視化。
 - 運用:
-  - PagesはGitHub Actionsデプロイが有効。SecretsにAPIキーを入れて定期実行を設定するかは未着手。
-  - 将来のAdSense運用に備え、ユーザーサイト用リポジトリ `genkishimura2000.github.io` を作成し、`index.html` から `/meat_map/` へのリンクとサイト概要を掲載する。ここにも AdSense のサイト確認用スクリプト（`<head>` 内の `<script ...>`）を挿入する。
-  - PAT/Secretsは都度Revoke/管理すること。`docs/README_pat.md` 参照。
+  - Pagesは `main` / `/docs` のブランチ配信。データ定期更新を設定する場合も、Secretsをログや成果物へ出さない。
+  - 広告やアクセス解析は、ポリシー・同意要件・実装内容を同一PRで整合させてから導入する。
+  - PAT/Secretsは必要最小権限・短期で管理し、公開ディレクトリへ手順書や値を置かない。
+  - 旧ローカルデータの一次取得元を示す記録が見つかった場合は、公開可否と出自表記を確認し、この要件ファイルを更新する。取得元が不明な状態で第三者サービスを公開データの出典として推定しない。
 - ドキュメント:
   - READMEに最新のマップ機能（住所検索・並び替え・ライトデフォルト）を追記する余地あり。
 
@@ -112,13 +130,21 @@
      * description / catch_copy
      * budget_lunch, budget_dinner
      * rating, review_count
-     * sources（例: `["hotpepper"]` や 将来追加するソース名の集合）
-     * external_ids（hotpepper_id や 他APIのID など）
+     * sources（`["hotpepper"]`, `["legacy_local"]`, `["hotpepper", "legacy_local"]`。公開CSVではカンマ区切り。`legacy_local` は取得元ではなく旧ローカルデータ系列の区分）
+     * data_status（`current` または `legacy_unverified`）
+     * last_verified_at（取得または最終確認日、`YYYY-MM-DD`）
+     * hotpepper_url（Hot Pepper行の店舗ページ。`legacy_local` だけの行では `url` とともに空欄）
+     * legacy_id（旧ローカルデータ系列の公開用不透明ID。元サービスのURL・店舗IDを含めない）
+     * external_ids（hotpepper_id や、将来追加する公開可能な他APIのIDなど）
 
 4. **重複統合（マージ）**
 
    * 電話番号、緯度経度の近接、正規化した店名を使って「同一店」を判定。
-   * 複数ソースの情報を一つのレコードに統合（rating はどちらか優先などのポリシーを決める）。
+   * 現行データと旧ローカルデータを一つのレコードに統合し、現行Hot Pepperの値を優先する。
+   * 現行Hot Pepper行と旧ローカルデータが同一店舗の場合は、`sources` に `hotpepper,legacy_local` を残す。旧ローカルデータだけの行は `legacy_unverified` のまま保持する。
+   * Hot Pepper店舗IDと不透明な `legacy_id` を各データ系列内の一意キーとする。ID変更または系列間の候補は、NFKC正規化店名一致・座標50m以内・双方1候補の場合だけ統合し、曖昧な候補は削除しない。
+   * 既存公開CSVからの一度限りの移行では、店名・住所・座標・ジャンルの正規化値から決定的な `legacy_id` を生成する。第三者サービスのURL・店舗IDは生成seedに使わず、公開出力もしない。公開更新で新規スクレイピングやURL推測は行わない。
+   * 旧処理由来の連結予算値など、10万円を超える異常な公開用予算値は空欄にし、店舗行や正常な予算レンジは保持する。
 
 5. **カーニボアスコア算出**
 
@@ -156,7 +182,7 @@
      * rating, review_count
      * url（公式 or グルメサイト）
      * notes（カーニボア向きコメント）
-     * avg_dinner_budget（夜の平均予算の目安。円・整数。食べログのディナー予算レンジや HotPepper の budget から算出）
+     * avg_dinner_budget（夜の平均予算の目安。円・整数。旧ローカルデータに保持された予算レンジまたは Hot Pepper の budget から算出）
    * マイマップ側で「色＝ランク」「アイコン＝ジャンル」でスタイリングできるようにする。
 
 8. **更新・同期（任意 / できれば）**
@@ -354,11 +380,11 @@
 
 > きっかけは、「肉料理が好きなのに、行ったお店の記録や行きたいお店のリストがバラバラに散らばっている」という個人的な課題でした。  
 > せっかくなら、自分のためだけでなく、東京都内で肉をがっつり食べたい人みんなにとって便利なツールにしたいと考え、マップとして公開しています。  
-> データ収集やランク付けは、なるべく主観を排し、複数の情報源をもとにルールベースでスコアリングする形を採用しています。
+> 現行データの取得とランク付けは、なるべく主観を排し、Hot Pepper APIの項目をもとにルールベースで処理しています。一次取得元を特定できない旧ローカルデータは、未検証の別区分として表示します。
 
 #### D-3. どのようにお店を集めているか（概要）
 
-> 店舗情報は、主にグルメサイトの API など、公開されたデータソースから自動的に取得しています。  
+> 現行の店舗情報は、ホットペッパーグルメ Webサービスから自動的に取得しています。旧ローカルデータは再取得せず、未検証の過去スナップショットとして保持しています。
 > 東京都全体を一定間隔のグリッドで分割し、エリアごとに肉料理ジャンルのお店を機械的に集計することで、「たまたま目についたお店だけ」を並べる形にならないよう工夫しています。  
 > 取得したデータは、重複を統合し、ジャンルや評価、レビュー件数などをもとにスコアを計算したうえで、ランク（S/A/B/C）を付けています。
 
@@ -401,7 +427,7 @@
 - `og:description` 案:
   - `東京都内の肉料理店を、独自スコアでランク付けして地図表示。焼肉・ステーキ・肉バルなど、ガッツリ肉が食べたいときのための非公式マップです。`
 - `og:image`:
-  - `https://genkishimura2000.github.io/meat_map/ogp.png?v=20251204` を指定（GitHub Pages 本番 URL にあわせて要調整）。
+  - `https://bboysakamotofuyumi-afk.github.io/meat_map/ogp.png` を指定。
 
 
 ### map UI 改善ポイント
@@ -476,9 +502,10 @@
       - 韓国「https://www.irasutoya.com/2020/09/blog-post_89.html」
       - クラスタ・その他「https://www.irasutoya.com/2013/02/blog-post_3383.html」
 
-  - tabelog ソースのジャンル再分類
-    - ../https_learn/data/raw/*_map.html の JSON-LD (servesCuisine) / 店舗情報テーブル「ジャンル」 / RC コード (t_category2/3) を使用し、tabelog 行だけ genre を再分類するスクリプトを追加
-    - 再分類ロジック自体は normalize_genre.py の classify_row を再利用し、店名優先のルール（店名 vs ジャンルの衝突時は店名が勝つ）を維持する
+  - 旧ローカルデータの過去の精度検証
+    - 食べログの情報はローカル環境だけで旧ローカルデータの精度検証に使用したものであり、公開店舗候補の取得元ではない。履歴には検証結果を座標・予算・ジャンルへ反映する補正スクリプトも残っている。
+    - そのURL、店舗ID、検証情報および入力資料は公開しない。公開CSVには不透明な `legacy_id` と公開可能な店舗項目だけを残す。
+    - 再分類ロジック自体は `normalize_genre.py` の `classify_row` を再利用し、店名優先のルール（店名とジャンルの衝突時は店名が勝つ）を維持する。
 
 
   - ogp.png
@@ -507,7 +534,3 @@
   - SABCのスコアという概念を廃止したい
   - ジャンルはプルダウンではなく、現在のSABCのように選択してアクティブにするような方式を取りたい（できればアイコン）
   - mapのテーマを常時darkにしたい。道や地名などが灰色で書かれているのが分かりずらいので、道也地名は白で書いてほしい
-
-
-codex resume 019afba8-e341-7282-affd-5c2ed722691b
-- 

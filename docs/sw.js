@@ -1,21 +1,13 @@
-const CACHE_NAME = "tmm-cache-v8";
+const CACHE_NAME = "tmm-cache-v11";
 const ASSETS = [
+  "./",
+  "./index.html",
   "./map_demo.html",
   "./manifest.webmanifest",
   "./sw.js",
   "./ogp.png",
-  "./assets/new_pins/processed/meats.png",
-  "./assets/pins/steak.png",
-  "./assets/pins/other.png",
-  "./assets/pins/yakiniku.png",
-  "./assets/pins/churrasco.png",
-  "./assets/pins/yakitori.png",
-  "./assets/pins/shabushabu.png",
-  "./assets/pins/motsuyaki.png",
-  "./assets/pins/korea.png",
-  "./assets/pins/china.png",
-  "./assets/pins/cluster.png",
-  "./assets/pins/motsuyaki.png"
+  "./assets/icons/icon-192.png",
+  "./assets/icons/icon-512.png"
 ];
 
 self.addEventListener("install", (event) => {
@@ -36,6 +28,7 @@ self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET") return;
   const url = new URL(req.url);
+  if (url.origin !== self.location.origin) return;
   const isCsv = url.pathname.endsWith("/meatmap.csv");
 
   if (isCsv) {
@@ -43,8 +36,10 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       fetch(req)
         .then((res) => {
-          const clone = res.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(req, clone)).catch(() => {});
+          if (res.ok) {
+            const clone = res.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(req, clone)).catch(() => {});
+          }
           return res;
         })
         .catch(() => caches.match(req))
@@ -52,14 +47,22 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  if (req.mode === "navigate") {
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          if (res.ok) caches.open(CACHE_NAME).then((cache) => cache.put(req, res.clone())).catch(() => {});
+          return res;
+        })
+        .catch(() => caches.match(req).then((cached) => cached || caches.match("./map_demo.html")))
+    );
+    return;
+  }
+
   event.respondWith(
-    caches.match(req).then((cached) => {
-      if (cached) return cached;
-      return fetch(req).then((res) => {
-        const resClone = res.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone)).catch(() => {});
-        return res;
-      });
-    })
+    caches.match(req).then((cached) => cached || fetch(req).then((res) => {
+      if (res.ok) caches.open(CACHE_NAME).then((cache) => cache.put(req, res.clone())).catch(() => {});
+      return res;
+    }))
   );
 });

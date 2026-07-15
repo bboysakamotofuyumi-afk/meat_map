@@ -4,7 +4,9 @@ Client for the HotPepper Gourmet API.
 from __future__ import annotations
 
 import os
+import re
 import time
+import unicodedata
 from typing import Dict, List, Optional, Sequence
 
 import requests
@@ -90,12 +92,20 @@ class HotPepperClient:
                     message = "; ".join(err.get("message", "Unknown error") for err in errors if isinstance(err, dict))
                     raise RuntimeError(f"HotPepper API error: {message}")
                 return results
-            except Exception as exc:  # noqa: BLE001
+            except requests.RequestException as exc:
+                status = exc.response.status_code if exc.response is not None else "unknown"
+                # requests の例外文字列には API キー入りURLが含まれ得るため、そのまま再送出しない。
+                last_exc = RuntimeError(f"HotPepper API request failed (status={status})")
+                if attempt < 2:
+                    time.sleep(2 * (attempt + 1))
+                else:
+                    raise last_exc from None
+            except (RuntimeError, ValueError) as exc:
                 last_exc = exc
                 if attempt < 2:
                     time.sleep(2 * (attempt + 1))
                 else:
-                    raise
+                    raise exc from None
         if last_exc:
             raise last_exc
         raise RuntimeError("HotPepper API request failed without exception")
@@ -196,11 +206,29 @@ def normalize_hotpepper_store(shop: dict) -> RawStoreRecord:
 def _safe_budget(budget: Optional[dict]) -> Optional[int]:
     if not budget:
         return None
-    if budget.get("average"):
-        digits = "".join(ch for ch in budget["average"] if ch.isdigit())
-        if digits.isdigit():
-            return int(digits)
+    standard_range = budget.get("name")
+    if standard_range:
+        return _parse_budget_values(str(standard_range))
+
+    # average は自由記述欄でもあるため、純粋な金額表記の場合だけフォールバックする。
+    average = unicodedata.normalize("NFKC", str(budget.get("average") or "")).strip()
+    money = r"[¥￥]?\s*\d[\d,]*\s*円?"
+    price_label = rf"{money}(?:\s*(?:～|〜|~|-)\s*{money})?\s*(?:程度|前後|以下|以上)?"
+    if average and re.fullmatch(price_label, average):
+        return _parse_budget_values(average)
     return None
+
+
+def _parse_budget_values(label: str) -> Optional[int]:
+    normalized = unicodedata.normalize("NFKC", label)
+    values = [
+        amount
+        for value in re.findall(r"\d[\d,]*", normalized)
+        if (amount := int(value.replace(",", ""))) > 0
+    ]
+    if len(values) >= 2:
+        return round((values[0] + values[1]) / 2)
+    return values[0] if values else None
 
 
 def _extract_url(shop: dict) -> Optional[str]:

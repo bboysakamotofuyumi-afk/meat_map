@@ -2,9 +2,10 @@ import json
 from pathlib import Path
 
 import pytest
+import requests
 
 from meatmap.models import RawStoreRecord
-from meatmap.sources.hotpepper import HotPepperClient, normalize_hotpepper_store
+from meatmap.sources.hotpepper import HotPepperClient, _safe_budget, normalize_hotpepper_store
 
 DATA_DIR = Path(__file__).parent / "data"
 
@@ -70,3 +71,42 @@ def test_fetch_tokyo_meat_shops_filters_okonomiyaki(monkeypatch: pytest.MonkeyPa
 
     records = client.fetch_tokyo_meat_shops()
     assert records == []
+
+
+def test_request_error_does_not_leak_api_key(monkeypatch: pytest.MonkeyPatch):
+    secret = "secret-api-key"
+
+    class FailingSession:
+        def get(self, *args, **kwargs):
+            raise requests.HTTPError(f"failed URL contains key={secret}")
+
+    monkeypatch.setattr("meatmap.sources.hotpepper.time.sleep", lambda *_: None)
+    client = HotPepperClient(api_key=secret, session=FailingSession())
+
+    with pytest.raises(RuntimeError) as exc_info:
+        client._request({"large_area": "Z011"})
+
+    assert secret not in str(exc_info.value)
+
+
+@pytest.mark.parametrize(
+    ("label", "expected"),
+    [
+        ("4000円", 4000),
+        ("1,000～2,000円", 1500),
+        ("3001～4000円", 3500),
+        ("0円", None),
+        ("料金未定", None),
+        ("お会計10％OFF◆飲み放題コース多数", None),
+    ],
+)
+def test_safe_budget(label: str, expected: int | None):
+    assert _safe_budget({"average": label}) == expected
+
+
+def test_safe_budget_prefers_standard_range_over_promotional_text():
+    budget = {
+        "name": "3001～4000円",
+        "average": "お会計10％OFF◆飲み放題コースなどのクーポン多数",
+    }
+    assert _safe_budget(budget) == 3500

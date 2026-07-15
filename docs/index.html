@@ -4,28 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>TOKYO MEAT MAP</title>
-  <link rel="icon" type="image/png" href="assets/new_pins/processed/meats.png">
-  <link rel="apple-touch-icon" href="assets/new_pins/processed/meats.png">
-  <script async src="https://fundingchoicesmessages.google.com/i/pub-9721987325108836?ers=1"></script>
-  <script>
-    (function() {
-      function signalGooglefcPresent() {
-        if (!window.frames['googlefcPresent']) {
-          if (document.body) {
-            const iframe = document.createElement('iframe');
-            iframe.style = 'width:0;height:0;border:0;display:none';
-            iframe.name = 'googlefcPresent';
-            document.body.appendChild(iframe);
-          } else {
-            setTimeout(signalGooglefcPresent, 50);
-          }
-        }
-      }
-      signalGooglefcPresent();
-    })();
-  </script>
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9721987325108836"
-          crossorigin="anonymous"></script>
+  <meta name="description" content="東京都内の肉料理店をジャンルや店名から探せる非公式マップです。">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; object-src 'none'; base-uri 'self'; style-src 'self' 'unsafe-inline'">
+  <link rel="canonical" href="https://bboysakamotofuyumi-afk.github.io/meat_map/">
+  <link rel="icon" type="image/png" href="assets/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
   <style>
     :root {
       --bg: #000000;
@@ -66,6 +49,8 @@
     }
     .pill { display: inline-block; padding: 4px 8px; border-radius: 999px; background: rgba(255,255,255,0.08); color: var(--muted); font-size: 12px; }
     ul { padding-left: 18px; color: var(--muted); line-height: 1.6; }
+    footer { padding: 4px 18px 32px; color: var(--muted); font-size: 13px; }
+    footer a { color: var(--accent); }
   </style>
 </head>
 <body>
@@ -73,7 +58,7 @@
     <div class="container">
       <p class="pill">TOKYO MEAT MAP</p>
       <h1>都内の“肉に本気”なお店をマッピング</h1>
-      <p>ホットペッパーから取得した焼肉・ステーキ等の肉系店舗を集約し、地図上で一覧表示します。毎回の取得結果はCSVに出力され、GitHub Pagesで確認できます。</p>
+      <p>ホットペッパーグルメ Webサービス由来の店舗データと、従前から保有する未検証の旧ローカルデータから、焼肉・ステーキ等の肉系店舗を地図上で探せます。</p>
       <a class="btn" href="./map_demo.html?csv=output/meatmap.csv">マップを開く</a>
     </div>
   </div>
@@ -83,37 +68,46 @@
         <h3>使い方</h3>
         <ul>
           <li>上の「マップを開く」をクリック</li>
-          <li>ランク・ジャンル・検索で絞り込み</li>
-          <li>リストから店舗を選んでズーム</li>
+          <li>ジャンルを選ぶか、店名で検索して絞り込み</li>
+          <li>ピンを選んで店舗情報と経路を確認</li>
           <li>現在地ボタンで自分の近くを確認</li>
         </ul>
       </div>
       <div class="card">
         <h3>データ更新</h3>
         <ul>
-          <li>スクリプト: <code>python -m meatmap.cli --copy-to-docs</code></li>
-          <li>データソース: ホットペッパー（東京、肉系ジャンル＋キーワード）</li>
-          <li>CSV先頭に生成日時・件数をメタ行で付与</li>
+          <li>現行APIデータ更新: <code>make csv</code>（公開前に旧データとの統合・検証を実施）</li>
+          <li>現行データ: ホットペッパーグルメ Webサービス</li>
+          <li>旧データ区分: 旧ローカルデータ（未検証）</li>
+          <li>現行APIで確認できない旧Hot Pepper行も旧データ（未検証）として保持</li>
+          <li>CSVに生成日時、各行に取得・最終確認日または記録日と確認状態を記録</li>
         </ul>
       </div>
       <div class="card">
         <h3>注意・免責</h3>
         <ul>
           <li>情報の正確性は保証しません</li>
-          <li>広告・寄付等は未設定（必要に応じて追加予定）</li>
+          <li>「旧データ（未検証）」は現在の営業状況等を再確認していません</li>
+          <li>本サイトは各データ提供元・参照先の公式または提携サービスではありません</li>
+          <li>来店前に店舗の公式情報または店舗へ直接ご確認ください</li>
+          <li>現在、広告配信・寄付受付・アクセス解析は行っていません</li>
           <li>APIキーは公開しないでください</li>
         </ul>
       </div>
       <div class="card">
-        <h3>サポート / 広告プレースホルダ</h3>
+        <h3>修正依頼・ご意見</h3>
         <ul>
-          <li>AdSense: 審査後にコード挿入予定（マップ下部に配置）</li>
-          <li>寄付: BuyMeACoffee / Ko-fi などのボタンを配置予定</li>
-          <li>アフィリエイト: 関連リンクがあればマップ説明に掲示</li>
+          <li>閉店・住所違い・表示不具合をご報告ください</li>
+          <li>GitHub Issues は公開投稿です</li>
+          <li>個人情報は記載しないでください</li>
         </ul>
-        <a class="btn" href="#" aria-disabled="true" style="opacity:0.6; pointer-events:none;">サポートリンク（準備中）</a>
+        <a class="btn" href="https://github.com/bboysakamotofuyumi-afk/meat_map/issues" target="_blank" rel="noopener noreferrer">GitHub Issues</a>
       </div>
     </div>
   </div>
+  <footer class="container">
+    <p>Powered by <a href="https://webservice.recruit.co.jp/" target="_blank" rel="noopener noreferrer">ホットペッパーグルメ Webサービス</a></p>
+    <p><a href="privacy.html">プライバシーポリシー</a> / <a href="terms.html">利用規約・免責</a> / <a href="concept.html">サイト概要</a></p>
+  </footer>
 </body>
 </html>

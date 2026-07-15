@@ -1,7 +1,11 @@
 .env
 output/
-!docs/output/
 data/
 __pycache__/
 *.pyc
 .pytest_cache/
+
+# GitHub Pages には配信用CSVだけを含める。
+!docs/output/
+docs/output/*
+!docs/output/meatmap.csv
