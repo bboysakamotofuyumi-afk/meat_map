@@ -1,4 +1,4 @@
-const CACHE_NAME = "tmm-cache-v11";
+const CACHE_NAME = "tmm-cache-v12";
 const ASSETS = [
   "./",
   "./index.html",
