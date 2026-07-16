@@ -34,6 +34,37 @@ FIELDS = [
 ]
 
 
+def valid_map_text() -> str:
+    genre_entries = "\n".join(
+        f'      "{genre}": {{ icon: "肉" }},'
+        for genre in validator.REQUIRED_GENRE_META_KEYS
+    )
+    return f"""
+<!doctype html>
+<html lang="ja">
+  <body>
+    <select id="budget-filter"></select>
+    <input id="current-only-filter" type="checkbox">
+    <button id="filter-reset" type="button">解除</button>
+    <output id="filter-result-count"></output>
+    <script>
+      const genreMeta = Object.freeze({{
+{genre_entries}
+      }});
+      function classifyGenre(row) {{
+        const searchText = `${{row.name ?? ""}} ${{row.genre ?? ""}}`;
+        return searchText.includes("焼肉") ? "焼肉" : "その他";
+      }}
+      const candidate = new URL("./output/meatmap.csv", location.href);
+      if (candidate.origin === location.origin) {{
+        console.log("data_status last_verified_at legacy_unverified legacy_local");
+      }}
+    </script>
+  </body>
+</html>
+"""
+
+
 def write_csv(path: Path, rows: list[dict[str, str]]) -> None:
     with path.open("w", encoding="utf-8", newline="") as handle:
         handle.write(f"# generated_at_utc={datetime.now(timezone.utc).isoformat()}\n")
@@ -229,11 +260,7 @@ def test_validate_csv_rejects_legacy_lineage_loss(tmp_path, monkeypatch):
 def test_validate_public_text_rejects_tabelog_domain_anywhere_in_docs(tmp_path, monkeypatch):
     docs_dir = tmp_path / "docs"
     docs_dir.mkdir()
-    (docs_dir / "map_demo.html").write_text(
-        "candidate.origin === location.origin data_status last_verified_at "
-        "legacy_unverified legacy_local",
-        encoding="utf-8",
-    )
+    (docs_dir / "map_demo.html").write_text(valid_map_text(), encoding="utf-8")
     (docs_dir / "memo.md").write_text("https://tabelog.com/example", encoding="utf-8")
     monkeypatch.setattr(validator, "ROOT", tmp_path)
     monkeypatch.setattr(validator, "DOCS_DIR", docs_dir)
@@ -242,3 +269,43 @@ def test_validate_public_text_rejects_tabelog_domain_anywhere_in_docs(tmp_path, 
     validator.validate_public_text(errors)
 
     assert any("tabelog.com" in error for error in errors)
+
+
+def test_validate_public_text_accepts_genre_and_filter_contract(tmp_path, monkeypatch):
+    docs_dir = tmp_path / "docs"
+    docs_dir.mkdir()
+    (docs_dir / "map_demo.html").write_text(valid_map_text(), encoding="utf-8")
+    monkeypatch.setattr(validator, "ROOT", tmp_path)
+    monkeypatch.setattr(validator, "DOCS_DIR", docs_dir)
+
+    errors: list[str] = []
+    validator.validate_public_text(errors)
+
+    assert errors == []
+
+
+def test_validate_public_text_rejects_genre_filter_and_bounds_regressions(tmp_path, monkeypatch):
+    docs_dir = tmp_path / "docs"
+    docs_dir.mkdir()
+    invalid_map = (
+        valid_map_text()
+        .replace('"ジンギスカン": { icon: "肉" },', "")
+        .replace('id="budget-filter"', 'id="removed-budget-filter"')
+        .replace('row.name ?? ""', 'row.title ?? ""')
+        .replace(
+            'console.log("data_status last_verified_at legacy_unverified legacy_local");',
+            'console.log("data_status last_verified_at legacy_unverified legacy_local");\n'
+            "        bounds.contains(marker.getLatLng());",
+        )
+    )
+    (docs_dir / "map_demo.html").write_text(invalid_map, encoding="utf-8")
+    monkeypatch.setattr(validator, "ROOT", tmp_path)
+    monkeypatch.setattr(validator, "DOCS_DIR", docs_dir)
+
+    errors: list[str] = []
+    validator.validate_public_text(errors)
+
+    assert any("genreMeta に ジンギスカン 分類" in error for error in errors)
+    assert any("予算フィルター (#budget-filter)" in error for error in errors)
+    assert any("店名 row.name を分類に使用" in error for error in errors)
+    assert any("bounds.contains(marker.getLatLng())" in error for error in errors)

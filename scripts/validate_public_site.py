@@ -61,6 +61,31 @@ FORBIDDEN_PUBLIC_TEXT = {
     "tabelog.com": "ローカル検証にのみ使用したサービスの公開URL",
 }
 
+REQUIRED_GENRE_META_KEYS = (
+    "焼肉",
+    "ホルモン",
+    "ステーキ",
+    "焼き鳥",
+    "もつ焼き",
+    "しゃぶしゃぶ",
+    "すき焼き",
+    "韓国",
+    "シュラスコ",
+    "ジンギスカン",
+    "肉バル",
+    "ハンバーグ",
+    "その他",
+)
+REQUIRED_MAP_UI_IDS = {
+    "budget-filter": "予算フィルター",
+    "current-only-filter": "現行確認済みフィルター",
+    "filter-reset": "絞り込み解除ボタン",
+    "filter-result-count": "絞り込み結果件数",
+}
+BOUNDS_MARKER_FILTER_PATTERN = re.compile(
+    r"\bbounds\s*\.\s*contains\s*\(\s*marker\s*\.\s*getLatLng\s*\(\s*\)\s*\)"
+)
+
 
 class LocalReferenceParser(HTMLParser):
     def __init__(self) -> None:
@@ -71,6 +96,79 @@ class LocalReferenceParser(HTMLParser):
         for key, value in attrs:
             if key in {"href", "src"} and value:
                 self.references.append((value, self.getpos()[0]))
+
+
+def extract_braced_javascript(text: str, opening_index: int) -> str | None:
+    """単純なJSオブジェクト/関数から対応する波括弧までを抽出する。"""
+    if opening_index < 0 or opening_index >= len(text) or text[opening_index] != "{":
+        return None
+
+    depth = 0
+    quote: str | None = None
+    escaped = False
+    for index in range(opening_index, len(text)):
+        character = text[index]
+        if quote is not None:
+            if escaped:
+                escaped = False
+            elif character == "\\":
+                escaped = True
+            elif character == quote:
+                quote = None
+            continue
+
+        if character in {'"', "'", "`"}:
+            quote = character
+        elif character == "{":
+            depth += 1
+        elif character == "}":
+            depth -= 1
+            if depth == 0:
+                return text[opening_index : index + 1]
+    return None
+
+
+def validate_map_ui_contract(map_text: str, errors: list[str]) -> None:
+    genre_declaration = re.search(r"\b(?:const|let)\s+genreMeta\s*=", map_text)
+    genre_meta: str | None = None
+    if genre_declaration is None:
+        errors.append("docs/map_demo.html: genreMeta が見つかりません")
+    else:
+        object_start = map_text.find("{", genre_declaration.end())
+        statement_end = map_text.find(";", genre_declaration.end())
+        if object_start < 0 or (statement_end >= 0 and statement_end < object_start):
+            errors.append("docs/map_demo.html: genreMeta のオブジェクト定義が見つかりません")
+        else:
+            genre_meta = extract_braced_javascript(map_text, object_start)
+            if genre_meta is None:
+                errors.append("docs/map_demo.html: genreMeta のオブジェクト定義が不完全です")
+
+    if genre_meta is not None:
+        for genre in REQUIRED_GENRE_META_KEYS:
+            key_pattern = rf'(?:["\']{re.escape(genre)}["\']|\b{re.escape(genre)}\b)\s*:'
+            if not re.search(key_pattern, genre_meta):
+                errors.append(f"docs/map_demo.html: genreMeta に {genre} 分類がありません")
+
+    for element_id, label in REQUIRED_MAP_UI_IDS.items():
+        if not re.search(rf'\bid\s*=\s*["\']{re.escape(element_id)}["\']', map_text):
+            errors.append(f"docs/map_demo.html: {label} (#{element_id}) が見つかりません")
+
+    classifier = re.search(r"\bfunction\s+classifyGenre\s*\(\s*row\s*\)\s*\{", map_text)
+    if classifier is None:
+        errors.append("docs/map_demo.html: classifyGenre(row) が見つかりません")
+    else:
+        classifier_body = extract_braced_javascript(map_text, classifier.end() - 1)
+        name_reference = re.compile(
+            r"(?:\brow\s*\??\.\s*name\b|\{[^{}]*\bname\b[^{}]*\}\s*=\s*row\b)"
+        )
+        if classifier_body is None or not name_reference.search(classifier_body):
+            errors.append("docs/map_demo.html: classifyGenre(row) が店名 row.name を分類に使用していません")
+
+    if BOUNDS_MARKER_FILTER_PATTERN.search(map_text):
+        errors.append(
+            "docs/map_demo.html: 地図範囲外の店舗を欠落させる "
+            "bounds.contains(marker.getLatLng()) は使用できません"
+        )
 
 
 def iter_public_text_files() -> list[Path]:
@@ -113,6 +211,7 @@ def validate_public_text(errors: list[str]) -> None:
     for needle, label in required_mixed_source_ui.items():
         if needle not in map_text:
             errors.append(f"docs/map_demo.html: {label}が見つかりません")
+    validate_map_ui_contract(map_text, errors)
 
 
 def validate_source_url(

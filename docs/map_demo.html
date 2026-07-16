@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>東京都の肉料理マップ | 焼肉・ステーキを地図で探す</title>
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; img-src 'self' data: https://*.tile.openstreetmap.org https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; connect-src 'self' https://nominatim.openstreetmap.org; worker-src 'self'" />
-  <meta name="description" content="東京都内の焼肉、ステーキなど肉料理店を地図で一覧表示。ジャンルや店名から探せる非公式まとめマップです。" />
+  <meta name="description" content="東京都内の焼肉、ステーキなど肉料理店を地図で一覧表示。ジャンル・予算目安・確認状態や店名から探せる非公式まとめマップです。" />
   <meta property="og:title" content="東京都の肉料理マップ" />
-  <meta property="og:description" content="東京都内の肉料理店を地図上に表示。焼肉・ステーキ・肉バルなど、ガッツリ肉が食べたいときのための非公式マップです。" />
+  <meta property="og:description" content="東京都内の肉料理店をジャンル・予算目安・確認状態で絞り込める、ガッツリ肉が食べたいときのための非公式マップです。" />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://bboysakamotofuyumi-afk.github.io/meat_map/map_demo.html" />
   <meta property="og:image" content="https://bboysakamotofuyumi-afk.github.io/meat_map/ogp.png" />
@@ -75,57 +75,45 @@
       align-items: center;
     }
     .genre-chips {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 10px;
-      align-items: stretch;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      align-items: center;
     }
     .genre-chip {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
-      padding: 12px 14px;
+      gap: 5px;
+      min-height: 38px;
+      padding: 6px 9px;
       border-radius: 999px;
       border: 1px solid rgba(255, 255, 255, 0.12);
       background: rgba(15, 23, 42, 0.9);
-      color: var(--muted);
-      font-size: 12px;
+      color: var(--text);
+      font-size: 11px;
+      font-weight: 750;
       cursor: pointer;
+      box-shadow: inset 3px 0 0 var(--genre-color, var(--accent));
+      white-space: nowrap;
     }
     .genre-chip-symbol {
       display: grid;
       place-items: center;
-      width: 40px;
-      height: 40px;
-      font-size: 28px;
+      width: 24px;
+      height: 24px;
+      font-size: 19px;
       line-height: 1;
     }
-    .genre-chip--icon-only {
-      padding: 0;
-      border: none;
-      background: transparent;
-      width: 100%;
-      aspect-ratio: 1 / 1;
-      border-radius: 10px;
-    }
-    .genre-chip--icon-only .genre-chip-symbol {
-      width: 100%;
-      height: 100%;
-      border-radius: inherit;
-      font-size: clamp(24px, 5vw, 38px);
-      background: linear-gradient(145deg, rgba(255,255,255,0.12), rgba(249,115,122,0.16));
-    }
+    .genre-chip-count { color: var(--muted); font-size: 10px; font-variant-numeric: tabular-nums; }
     .genre-chip.is-active {
-      background: var(--accent);
+      background: var(--genre-color, var(--accent));
+      background: color-mix(in srgb, var(--genre-color, var(--accent)) 76%, white);
       color: #0f172a;
       border-color: rgba(248, 250, 252, 0.9);
+      box-shadow: 0 5px 16px color-mix(in srgb, var(--genre-color, var(--accent)) 40%, transparent);
     }
-    .genre-chip--icon-only.is-active {
-      background: rgba(249, 115, 122, 0.18);
-      border-color: var(--accent);
-      box-shadow: none;
-    }
+    .genre-chip.is-active .genre-chip-count { color: rgba(15, 23, 42, 0.78); }
     .control {
       display: flex;
       align-items: center;
@@ -192,6 +180,7 @@
       border-radius: 50%;
       overflow: visible;
       background: linear-gradient(145deg, #fff7f8, #ffc9d2);
+      background: linear-gradient(145deg, #fff, color-mix(in srgb, var(--genre-color, #f9737a) 42%, white));
       border: 2px solid rgba(255, 255, 255, 0.95);
       box-shadow: 0 10px 28px rgba(0,0,0,0.45);
     }
@@ -206,7 +195,7 @@
       position: absolute;
       bottom: 5px;
       right: 5px;
-      background: var(--accent);
+      background: var(--genre-color, var(--accent));
       color: #111827;
       font-weight: 800;
       padding: 2px 6px;
@@ -407,10 +396,31 @@
       cursor: pointer;
     }
     .filter-panel {
-      display: flex;
-      gap: 14px;
-      align-items: center;
+      display: grid;
+      gap: 9px;
+      align-items: start;
       width: 100%;
+    }
+    .filter-toolbar { width: 100%; }
+    .filter-result-count {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 6px 10px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 999px;
+      background: rgba(249, 115, 122, 0.13);
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .control-button--secondary {
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+      box-shadow: none;
     }
     .map-data-status {
       display: inline-flex;
@@ -433,31 +443,36 @@
       .filter-toggle { display: inline-flex; align-items: center; gap: 6px; }
       .filter-panel {
         width: 100%;
-        flex-direction: column;
-        align-items: flex-start;
         margin-top: 8px;
         display: none;
       }
       .filter-panel.is-open {
-        display: flex;
+        display: grid;
       }
-      .controls { width: 100%; }
+      .controls { width: 100%; min-width: 0; }
       .search-container { max-width: 100%; }
+      .genre-chips {
+        width: 100%;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding: 2px 2px 8px;
+        scrollbar-width: none;
+        overscroll-behavior-inline: contain;
+      }
+      .genre-chips::-webkit-scrollbar { display: none; }
+      .genre-chip { flex: 0 0 auto; min-height: 44px; }
+      .filter-toolbar .control { flex: 1 1 190px; }
     }
 
     @media (min-width: 901px) {
       .genre-chip {
-        padding: 8px 10px;
+        padding: 5px 8px;
         font-size: 11px;
       }
       .genre-chip-symbol {
         width: 24px;
         height: 24px;
         font-size: 20px;
-      }
-      .genre-chip--icon-only {
-        width: 100%;
-        aspect-ratio: 1 / 1;
       }
     }
 
@@ -485,6 +500,7 @@
       border-radius: 50% 50% 50% 12px;
       transform: rotate(-45deg);
       background: linear-gradient(145deg, #fff7f8, #ffc9d2);
+      background: linear-gradient(145deg, #fff, color-mix(in srgb, var(--genre-color, #f9737a) 42%, white));
       border: 2px solid rgba(255, 255, 255, 0.95);
       box-shadow: 0 8px 22px rgba(0,0,0,0.45);
       font-size: 25px;
@@ -492,6 +508,25 @@
     .marker-symbol > span {
       transform: rotate(45deg);
       line-height: 1;
+    }
+    .marker-genre-code {
+      position: absolute;
+      top: -4px;
+      left: -5px;
+      z-index: 2;
+      display: grid;
+      place-items: center;
+      min-width: 21px;
+      height: 21px;
+      padding: 0 4px;
+      border: 1px solid rgba(255, 255, 255, 0.94);
+      border-radius: 999px;
+      background: var(--genre-color, #f9737a);
+      color: #111827;
+      font-size: 9px;
+      font-weight: 900;
+      line-height: 1;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.34);
     }
     .price-badge {
       position: absolute;
@@ -576,16 +611,33 @@
 <body>
   <div id="app">
     <header>
-      <button id="filter-toggle" class="filter-toggle" type="button">フィルタを表示</button>
+      <button id="filter-toggle" class="filter-toggle" type="button" aria-controls="filter-panel" aria-expanded="false">フィルタを表示</button>
       <a id="legacy-map-badge" class="map-data-status" href="#data-details" aria-live="polite" hidden>未検証の店舗行を含みます</a>
       <div id="filter-panel" class="filter-panel">
         <div class="controls">
           <div id="genre-chips" class="genre-chips"></div>
         </div>
-        <div class="controls">
+        <div class="controls filter-toolbar">
+          <label class="control" for="budget-filter">
+            予算目安
+            <select id="budget-filter" class="control-select">
+              <option value="">すべて</option>
+              <option value="p3k">〜3,000円</option>
+              <option value="p5k">3,001〜5,000円</option>
+              <option value="p10k">5,001〜10,000円</option>
+              <option value="p10kplus">10,001円〜</option>
+              <option value="unknown">予算不明</option>
+            </select>
+          </label>
+          <label class="control" for="current-only-filter" title="最新のHot Pepper API取得で確認できた店舗だけを表示します">
+            <input id="current-only-filter" type="checkbox">
+            現行確認済みのみ
+          </label>
+          <button id="filter-reset" class="control-button control-button--secondary" type="button">絞り込み解除</button>
+          <output id="filter-result-count" class="filter-result-count" aria-live="polite">表示 0 / 0 件</output>
           <div class="search-container">
             <div class="search-bar">
-              <input id="geocode-input" type="search" placeholder="店名で検索">
+              <input id="geocode-input" type="search" placeholder="絞り込み結果から店名検索" aria-label="絞り込み結果から店名検索">
             </div>
             <div id="search-suggestions" class="search-suggestions"></div>
           </div>
@@ -699,25 +751,33 @@
         lat >= tokyoBounds.minLat && lat <= tokyoBounds.maxLat &&
         lng >= tokyoBounds.minLng && lng <= tokyoBounds.maxLng;
     }
-    const genreSymbols = Object.freeze({
-      "焼肉": "🔥",
-      "ステーキ": "🥩",
-      "シュラスコ": "🍖",
-      "焼き鳥・もつ焼き": "🍢",
-      "しゃぶしゃぶ": "🍲",
-      "韓国": "🌶️",
-      "その他": "🍽️",
+    const genreMeta = Object.freeze({
+      "焼肉": { label: "焼肉", symbol: "🥩", short: "焼", color: "#fb7185" },
+      "ホルモン": { label: "ホルモン", symbol: "🥓", short: "ホ", color: "#f97316" },
+      "ステーキ": { label: "ステーキ", symbol: "🥩", short: "牛", color: "#ef4444" },
+      "焼き鳥": { label: "焼き鳥", symbol: "🍗", short: "鳥", color: "#f59e0b" },
+      "もつ焼き": { label: "もつ焼き", symbol: "🍢", short: "もつ", color: "#d97706" },
+      "しゃぶしゃぶ": { label: "しゃぶしゃぶ", symbol: "🍲", short: "しゃ", color: "#38bdf8" },
+      "すき焼き": { label: "すき焼き", symbol: "🥘", short: "すき", color: "#a78bfa" },
+      "韓国": { label: "韓国肉料理", symbol: "🥓", short: "韓", color: "#f43f5e" },
+      "シュラスコ": { label: "シュラスコ", symbol: "🍖", short: "串", color: "#22c55e" },
+      "ジンギスカン": { label: "ジンギスカン", symbol: "🐑", short: "羊", color: "#84cc16" },
+      "肉バル": { label: "肉バル・ジビエ", symbol: "🍖", short: "肉", color: "#c084fc" },
+      "ハンバーグ": { label: "ハンバーグ", symbol: "🍔", short: "ハ", color: "#eab308" },
+      "その他": { label: "その他", symbol: "🍽️", short: "他", color: "#94a3b8" },
     });
     const cluster = L.markerClusterGroup({
       chunkedLoading: true,
       spiderfyOnMaxZoom: true,
       iconCreateFunction: (cl) => {
         const count = cl.getChildCount();
-        const symbol = (typeof activeGenre === "string" && activeGenre && typeof genreSymbols === "object")
-          ? (genreSymbols[activeGenre] || "🥩")
-          : "🥩";
+        const activeMeta = (typeof activeGenre === "string" && activeGenre)
+          ? genreMeta[activeGenre]
+          : null;
+        const symbol = activeMeta ? activeMeta.symbol : "🥩";
+        const color = activeMeta ? activeMeta.color : "#f9737a";
         return L.divIcon({
-          html: `<div class="cluster-icon"><span class="cluster-icon-symbol" aria-hidden="true">${symbol}</span><span class="cluster-icon-count">${count}</span></div>`,
+          html: `<div class="cluster-icon" style="--genre-color:${color}" role="img" aria-label="${activeMeta ? activeMeta.label : "肉料理"} ${count}件"><span class="cluster-icon-symbol" aria-hidden="true">${symbol}</span><span class="cluster-icon-count">${count}</span></div>`,
           className: "",
           iconSize: [64, 64],
         });
@@ -739,6 +799,10 @@
     const genreChips = document.getElementById("genre-chips");
     const filterToggle = document.getElementById("filter-toggle");
     const filterPanel = document.getElementById("filter-panel");
+    const budgetFilter = document.getElementById("budget-filter");
+    const currentOnlyFilter = document.getElementById("current-only-filter");
+    const filterReset = document.getElementById("filter-reset");
+    const filterResultCount = document.getElementById("filter-result-count");
     const geoButton = document.getElementById("geo-button");
     const geocodeInput = document.getElementById("geocode-input");
     const searchSuggestions = document.getElementById("search-suggestions");
@@ -762,6 +826,7 @@
       filterToggle.addEventListener("click", () => {
         const isOpen = filterPanel.classList.toggle("is-open");
         filterToggle.textContent = isOpen ? "フィルタを隠す" : "フィルタを表示";
+        filterToggle.setAttribute("aria-expanded", String(isOpen));
       });
     }
 
@@ -782,7 +847,9 @@
       if (!marker) return;
       const targetZoom = Math.max(map.getZoom(), 17);
       map.setView(marker.getLatLng(), targetZoom);
-      marker.openPopup();
+      if (cluster.hasLayer(marker)) {
+        cluster.zoomToShowLayer(marker, () => marker.openPopup());
+      }
     }
 
     function normalizeAddressForCache(address) {
@@ -855,6 +922,7 @@
       const results = [];
       const seen = new Set();
       for (const item of searchItems) {
+        if (!item.marker || !cluster.hasLayer(item.marker)) continue;
         const hay = `${item.name}`.toLowerCase();
         if (!hay.includes(q)) continue;
         const id = item.marker && item.marker._leaflet_id;
@@ -932,29 +1000,59 @@
       `;
     }
 
-    function normalizeGenreText(genre) {
-      const g = (genre || "").trim();
-      if (!g) return "その他";
-      if (/焼肉|ホルモン/.test(g)) return "焼肉";
-      if (/ステーキ|鉄板焼/.test(g)) return "ステーキ";
-      if (/シュラスコ|ブラジル/.test(g)) return "シュラスコ";
-      if (/焼き鳥|もつ焼き|もつ焼/.test(g)) return "焼き鳥・もつ焼き";
-      if (/しゃぶしゃぶ|すき焼き/.test(g)) return "しゃぶしゃぶ";
-      if (/韓国/.test(g)) return "韓国";
-      if (/中華/.test(g)) return "その他";
-      // 上記以外は認識外ジャンルとして「その他」に倒す
-      return genreSymbols[g] ? g : "その他";
+    function normalizeGenreSearchText(value) {
+      return String(value || "")
+        .normalize("NFKC")
+        .replace(/[\s　・･_-]+/g, "")
+        .toLowerCase();
+    }
+
+    function classifyGenre(row) {
+      const name = normalizeGenreSearchText(row && row.name);
+      const rawGenre = normalizeGenreSearchText(row && row.genre);
+      const nameRules = [
+        ["すき焼き", /すき焼|すきやき|鋤焼/],
+        ["しゃぶしゃぶ", /しゃぶ/],
+        ["シュラスコ", /シュラスコ|churrasco/],
+        ["ジンギスカン", /ジンギスカン|成吉思汗|(?:生|焼き|焼|遊牧)ラム|ラム(?:肉|ちゃん|ゴロー|チョップ|しゃぶ|焼|と|専門|ハウス|酒場)|仔羊|小羊|羊(?!羹)/],
+        ["ホルモン", /ホルモン|まるちょう|マルチョウ|しまちょう|シマチョウ/],
+        ["もつ焼き", /もつ焼|もつやき|やきとん|焼きとん/],
+        ["焼き鳥", /焼き鳥|焼鳥|やきとり|yakitori/],
+        ["ハンバーグ", /ハンバーグ|hamburg(?!er)/],
+        ["肉バル", /肉バル|ミートバル|meatbar|ジビエ|ローストビーフ|bbq|バーベキュー/],
+        ["ステーキ", /ステーキ|steak|鉄板焼/],
+        ["焼肉", /焼肉|yakiniku|牛たん|牛タン/],
+        ["韓国", /サムギョプサル|韓国料理|コリアン/],
+      ];
+      for (const [genre, pattern] of nameRules) {
+        if (pattern.test(name)) return genre;
+      }
+
+      if (/すき焼|すきやき|鋤焼/.test(rawGenre)) return "すき焼き";
+      if (/しゃぶ/.test(rawGenre)) return "しゃぶしゃぶ";
+      if (/シュラスコ|churrasco|ブラジル/.test(rawGenre)) return "シュラスコ";
+      if (/ジンギスカン|成吉思汗|ラム|羊/.test(rawGenre)) return "ジンギスカン";
+      if (/もつ焼|もつやき|やきとん|焼きとん/.test(rawGenre)) return "もつ焼き";
+      if (/焼き鳥|焼鳥|やきとり|yakitori/.test(rawGenre)) return "焼き鳥";
+      if (/ハンバーグ|hamburg(?!er)/.test(rawGenre)) return "ハンバーグ";
+      if (/ステーキ|steak|鉄板焼/.test(rawGenre)) return "ステーキ";
+      if (/焼肉|yakiniku|牛たん|牛タン/.test(rawGenre)) return "焼肉";
+      if (/ホルモン/.test(rawGenre)) return "ホルモン";
+      if (/肉バル|ミートバル|meatbar|ジビエ|ローストビーフ|bbq|バーベキュー/.test(rawGenre)) return "肉バル";
+      if (/韓国|サムギョプサル|コリアン/.test(rawGenre)) return "韓国";
+      return "その他";
     }
 
     function iconForRow(row, priceInfo) {
-      const genreText = normalizeGenreText(row.genre || "");
-      const symbol = genreSymbols[genreText] || genreSymbols["その他"];
+      const genreText = classifyGenre(row);
+      const meta = genreMeta[genreText] || genreMeta["その他"];
       const baseSize = [48, 48];
       const badgeTier = priceBadgeTier(priceInfo && priceInfo.avgDinnerPrice);
       const badgeHtml = priceBadgeHtml(badgeTier);
       const html = `
-        <div class="marker-with-badge" style="width:${baseSize[0]}px; height:${baseSize[1]}px;">
-          <div class="marker-symbol"><span aria-hidden="true">${symbol}</span></div>
+        <div class="marker-with-badge" style="width:${baseSize[0]}px; height:${baseSize[1]}px; --genre-color:${meta.color};" role="img" aria-label="${meta.label}">
+          <span class="marker-genre-code" aria-hidden="true">${meta.short}</span>
+          <div class="marker-symbol"><span aria-hidden="true">${meta.symbol}</span></div>
           ${badgeHtml}
         </div>
       `;
@@ -1164,7 +1262,8 @@
       title.className = "popup-title";
       title.textContent = row.name || "名称不明";
       root.appendChild(title);
-      appendPopupMeta(root, row.genre || "");
+      const popupGenre = genreMeta[classifyGenre(row)] || genreMeta["その他"];
+      appendPopupMeta(root, `ジャンル: ${popupGenre.symbol} ${popupGenre.label}`);
       appendPopupMeta(root, row.address || "");
       if (Number.isFinite(priceInfo && priceInfo.avgDinnerPrice)) {
         appendPopupMeta(root, `予算目安: ¥${Math.round(priceInfo.avgDinnerPrice).toLocaleString("ja-JP")}`);
@@ -1203,7 +1302,7 @@
       }
       row.lat = lat;
       row.lng = lng;
-      const genreText = normalizeGenreText(row.genre || "");
+      const genreText = classifyGenre(row);
       if (genreText) {
         allGenreCounts.set(genreText, (allGenreCounts.get(genreText) || 0) + 1);
       }
@@ -1214,6 +1313,7 @@
         address: row.address || "",
         genreText,
         avgDinnerPrice: priceInfo.avgDinnerPrice,
+        dataStatus: String(row.data_status || "").trim().toLowerCase(),
       };
       marker.bindPopup(createPopup(row, priceInfo));
       markers.push(marker);
@@ -1283,21 +1383,29 @@
       processNextGeocode();
     }
 
-    function applyFilter() {
-      const bounds = map.getBounds();
+    function updateFilterResultCount(visible) {
+      if (!filterResultCount) return;
+      const visibleText = Number(visible || 0).toLocaleString("ja-JP");
+      const totalText = markers.length.toLocaleString("ja-JP");
+      filterResultCount.textContent = `表示 ${visibleText} / ${totalText} 件`;
+    }
+
+    function applyFilter(announce = false) {
       cluster.clearLayers();
-      let visible = 0;
-      const selectedGenre = (activeGenre || "").trim().toLowerCase();
-      markers.forEach(marker => {
+      const selectedGenre = (activeGenre || "").trim();
+      const selectedBudget = budgetFilter ? budgetFilter.value : "";
+      const currentOnly = Boolean(currentOnlyFilter && currentOnlyFilter.checked);
+      const visibleMarkers = markers.filter(marker => {
         const meta = marker.meta || {};
-        const latLng = marker.getLatLng();
-        if (!bounds.contains(latLng)) return;
-        const genreOk = !selectedGenre || (meta.genreText || "").toLowerCase() === selectedGenre;
-        if (!genreOk) return;
-        cluster.addLayer(marker);
-        visible += 1;
+        const genreOk = !selectedGenre || meta.genreText === selectedGenre;
+        const budgetOk = priceMatches(selectedBudget, meta.avgDinnerPrice);
+        const statusOk = !currentOnly || meta.dataStatus === "current";
+        return genreOk && budgetOk && statusOk;
       });
-      showToast(`表示中 ${visible} 件`);
+      if (visibleMarkers.length) cluster.addLayers(visibleMarkers);
+      updateFilterResultCount(visibleMarkers.length);
+      clearSuggestions();
+      if (announce) showToast(`絞り込み結果 ${visibleMarkers.length.toLocaleString("ja-JP")} 件`);
     }
 
     async function loadCsv() {
@@ -1338,7 +1446,7 @@
           const lat = parseFloat(row.lat);
           const lng = parseFloat(row.lng);
           if (Number.isFinite(lat) && Number.isFinite(lng) && inTokyoBounds(lat, lng)) {
-            const genreText = normalizeGenreText(row.genre || "");
+            const genreText = classifyGenre(row);
             if (genreText) {
               allGenreCounts.set(genreText, (allGenreCounts.get(genreText) || 0) + 1);
             }
@@ -1349,6 +1457,7 @@
               address: row.address || "",
               genreText,
               avgDinnerPrice: priceInfo.avgDinnerPrice,
+              dataStatus: String(row.data_status || "").trim().toLowerCase(),
             };
             marker.bindPopup(createPopup(row, priceInfo));
             markers.push(marker);
@@ -1437,84 +1546,79 @@
         { enableHighAccuracy: true, timeout: 10000 }
       );
     });
-    loadCsv();
-
     function populateGenreChipsFromCounts(genreCounts) {
       if (!genreChips) return;
-      const allowedGenres = ["焼肉", "ステーキ", "シュラスコ", "焼き鳥・もつ焼き", "しゃぶしゃぶ", "韓国", "その他"];
       genreChips.replaceChildren();
 
-      const createChip = (genreKey, label, symbol) => {
+      const createChip = (genreKey, meta, count) => {
         const chip = document.createElement("button");
         chip.type = "button";
         chip.className = "genre-chip";
         chip.dataset.genre = genreKey || "";
-        let displayLabel = label;
-        if (!genreKey) {
-          displayLabel = "All";
-        }
-        const showText = !symbol;
-        if (symbol) {
-          const icon = document.createElement("span");
-          icon.className = "genre-chip-symbol";
-          icon.setAttribute("aria-hidden", "true");
-          icon.textContent = symbol;
-          chip.appendChild(icon);
-        }
-        if (!showText) {
-          chip.classList.add("genre-chip--icon-only");
-        }
-        if (displayLabel === "その他" || genreKey === "その他") {
-          chip.classList.add("genre-chip--others");
-        }
-        if (showText) {
-          const text = document.createElement("span");
-          text.textContent = displayLabel;
-          chip.appendChild(text);
-        } else {
-          chip.setAttribute("aria-label", displayLabel);
-          chip.title = displayLabel;
-        }
+        chip.style.setProperty("--genre-color", meta.color);
+        const icon = document.createElement("span");
+        icon.className = "genre-chip-symbol";
+        icon.setAttribute("aria-hidden", "true");
+        icon.textContent = meta.symbol;
+        const label = document.createElement("span");
+        label.textContent = meta.label;
+        const countLabel = document.createElement("span");
+        countLabel.className = "genre-chip-count";
+        countLabel.textContent = count.toLocaleString("ja-JP");
+        chip.append(icon, label, countLabel);
+        chip.setAttribute("aria-label", `${meta.label} ${count.toLocaleString("ja-JP")}件`);
+        chip.title = `${meta.label}: ${count.toLocaleString("ja-JP")}件`;
+        if (genreKey === "その他") chip.classList.add("genre-chip--others");
         chip.addEventListener("click", () => {
           activeGenre = chip.dataset.genre || "";
-          Array.from(genreChips.querySelectorAll(".genre-chip")).forEach(el => el.classList.remove("is-active"));
-          chip.classList.add("is-active");
-          applyFilter();
+          syncGenreChipState();
+          applyFilter(true);
         });
-        if (!activeGenre && !genreKey) {
-          chip.classList.add("is-active");
-        } else if (activeGenre && genreKey && activeGenre === genreKey) {
-          chip.classList.add("is-active");
-        }
         genreChips.appendChild(chip);
       };
 
-      // 「All」チップ（全ジャンル）
-      createChip("", "All", "🥩");
+      createChip("", { label: "すべて", symbol: "🥩", color: "#f9737a" }, markers.length);
+      Object.entries(genreMeta).forEach(([key, meta]) => {
+        const count = genreCounts.get(key) || 0;
+        if (count > 0) createChip(key, meta, count);
+      });
+      syncGenreChipState();
+    }
 
-      allowedGenres.forEach((name) => {
-        createChip(name, name, genreSymbols[name] || "🍽️");
+    function syncGenreChipState() {
+      if (!genreChips) return;
+      Array.from(genreChips.querySelectorAll(".genre-chip")).forEach(chip => {
+        const isActive = (chip.dataset.genre || "") === activeGenre;
+        chip.classList.toggle("is-active", isActive);
+        chip.setAttribute("aria-pressed", String(isActive));
       });
     }
 
-    function priceMatches(priceKey, meta) {
+    function priceMatches(priceKey, price) {
       if (!priceKey) return true;
-      const lunch = meta.lunchPrice;
-      const dinner = meta.dinnerPrice;
-      if (priceKey === "lunch-2000") {
-        if (lunch == null) return false;
-        return lunch <= 2000;
-      }
-      if (priceKey === "dinner-5000") {
-        if (dinner == null) return false;
-        return dinner <= 5000;
-      }
-      if (priceKey === "dinner-8000") {
-        if (dinner == null) return false;
-        return dinner <= 8000;
-      }
-      return true;
+      const known = Number.isFinite(price);
+      if (priceKey === "unknown") return !known;
+      if (!known) return false;
+      if (priceKey === "p3k") return price <= 3000;
+      if (priceKey === "p5k") return price > 3000 && price <= 5000;
+      if (priceKey === "p10k") return price > 5000 && price <= 10000;
+      if (priceKey === "p10kplus") return price > 10000;
+      return false;
     }
+
+    if (budgetFilter) budgetFilter.addEventListener("change", () => applyFilter(true));
+    if (currentOnlyFilter) currentOnlyFilter.addEventListener("change", () => applyFilter(true));
+    if (filterReset) {
+      filterReset.addEventListener("click", () => {
+        activeGenre = "";
+        if (budgetFilter) budgetFilter.value = "";
+        if (currentOnlyFilter) currentOnlyFilter.checked = false;
+        syncGenreChipState();
+        applyFilter(true);
+      });
+    }
+
+    loadCsv();
 
   </script>
 </body>
