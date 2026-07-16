@@ -4,40 +4,22 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>東京都の肉料理マップ | 焼肉・ステーキを地図で探す</title>
-  <script async src="https://fundingchoicesmessages.google.com/i/pub-9721987325108836?ers=1"></script>
-  <script>
-    (function() {
-      function signalGooglefcPresent() {
-        if (!window.frames['googlefcPresent']) {
-          if (document.body) {
-            const iframe = document.createElement('iframe');
-            iframe.style = 'width:0;height:0;border:0;display:none';
-            iframe.name = 'googlefcPresent';
-            document.body.appendChild(iframe);
-          } else {
-            setTimeout(signalGooglefcPresent, 50);
-          }
-        }
-      }
-      signalGooglefcPresent();
-    })();
-  </script>
-  <meta name="description" content="東京都内の焼肉、ステーキなど肉料理店を地図で一覧表示。エリア・ジャンル・予算で絞り込み可能な非公式まとめマップです。" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; img-src 'self' data: https://*.tile.openstreetmap.org https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; connect-src 'self' https://nominatim.openstreetmap.org; worker-src 'self'" />
+  <meta name="description" content="東京都内の焼肉、ステーキなど肉料理店を地図で一覧表示。ジャンルや店名から探せる非公式まとめマップです。" />
   <meta property="og:title" content="東京都の肉料理マップ" />
   <meta property="og:description" content="東京都内の肉料理店を地図上に表示。焼肉・ステーキ・肉バルなど、ガッツリ肉が食べたいときのための非公式マップです。" />
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://genkishimura2000.github.io/meat_map/map_demo.html" />
-  <meta property="og:image" content="https://genkishimura2000.github.io/meat_map/ogp.png?v=20251204" />
+  <meta property="og:url" content="https://bboysakamotofuyumi-afk.github.io/meat_map/map_demo.html" />
+  <meta property="og:image" content="https://bboysakamotofuyumi-afk.github.io/meat_map/ogp.png" />
   <meta property="og:image:alt" content="東京都の肉料理マップのOGP画像" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
+  <link rel="canonical" href="https://bboysakamotofuyumi-afk.github.io/meat_map/map_demo.html" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="icon" type="image/png" href="assets/new_pins/processed/meats.png" />
-  <link rel="apple-touch-icon" href="assets/new_pins/processed/meats.png" />
+  <link rel="icon" type="image/png" href="assets/icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
   <meta name="theme-color" content="#000000" />
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9721987325108836"
-          crossorigin="anonymous"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css" />
@@ -111,10 +93,13 @@
       font-size: 12px;
       cursor: pointer;
     }
-    .genre-chip img {
+    .genre-chip-symbol {
+      display: grid;
+      place-items: center;
       width: 40px;
       height: 40px;
-      object-fit: contain;
+      font-size: 28px;
+      line-height: 1;
     }
     .genre-chip--icon-only {
       padding: 0;
@@ -124,19 +109,17 @@
       aspect-ratio: 1 / 1;
       border-radius: 10px;
     }
-    .genre-chip--icon-only img {
+    .genre-chip--icon-only .genre-chip-symbol {
       width: 100%;
       height: 100%;
       border-radius: inherit;
-      object-fit: contain;
+      font-size: clamp(24px, 5vw, 38px);
+      background: linear-gradient(145deg, rgba(255,255,255,0.12), rgba(249,115,122,0.16));
     }
     .genre-chip.is-active {
       background: var(--accent);
       color: #0f172a;
       border-color: rgba(248, 250, 252, 0.9);
-    }
-    .genre-chip.is-active img {
-      filter: brightness(0.95);
     }
     .genre-chip--icon-only.is-active {
       background: rgba(249, 115, 122, 0.18);
@@ -207,14 +190,14 @@
       align-items: center;
       justify-content: center;
       border-radius: 50%;
-      overflow: hidden;
-      background: transparent;
+      overflow: visible;
+      background: linear-gradient(145deg, #fff7f8, #ffc9d2);
+      border: 2px solid rgba(255, 255, 255, 0.95);
+      box-shadow: 0 10px 28px rgba(0,0,0,0.45);
     }
-    .cluster-icon img {
-      width: 100%;
-      height: 100%;
-      display: block;
-      object-fit: cover;
+    .cluster-icon-symbol {
+      font-size: 27px;
+      line-height: 1;
     }
     .leaflet-tile-pane img.leaflet-tile {
       filter: grayscale(1) invert(1) brightness(0.9) contrast(1.1);
@@ -383,16 +366,6 @@
       flex-wrap: wrap;
       margin-top: 8px;
     }
-    .ad-slot {
-      height: 120px;
-      border: 1px dashed rgba(255, 255, 255, 0.25);
-      border-radius: 10px;
-      display: grid;
-      place-items: center;
-      color: var(--muted);
-      font-weight: 700;
-      background: rgba(255, 255, 255, 0.03);
-    }
     .support-button, .share-buttons a {
       display: inline-flex;
       align-items: center;
@@ -439,6 +412,21 @@
       align-items: center;
       width: 100%;
     }
+    .map-data-status {
+      display: inline-flex;
+      align-items: center;
+      flex: 0 0 auto;
+      padding: 7px 10px;
+      border: 1px solid rgba(245, 158, 11, 0.65);
+      border-radius: 999px;
+      background: rgba(120, 53, 15, 0.88);
+      color: #fef3c7;
+      font-size: 12px;
+      font-weight: 800;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .map-data-status[hidden] { display: none; }
     @media (max-width: 900px) {
       #app { grid-template-rows: auto 1fr; }
       header { flex-direction: column; align-items: flex-start; }
@@ -462,9 +450,10 @@
         padding: 8px 10px;
         font-size: 11px;
       }
-      .genre-chip img {
+      .genre-chip-symbol {
         width: 24px;
         height: 24px;
+        font-size: 20px;
       }
       .genre-chip--icon-only {
         width: 100%;
@@ -488,6 +477,22 @@
       width: 48px;
       height: 48px;
     }
+    .marker-symbol {
+      display: grid;
+      place-items: center;
+      width: 48px;
+      height: 48px;
+      border-radius: 50% 50% 50% 12px;
+      transform: rotate(-45deg);
+      background: linear-gradient(145deg, #fff7f8, #ffc9d2);
+      border: 2px solid rgba(255, 255, 255, 0.95);
+      box-shadow: 0 8px 22px rgba(0,0,0,0.45);
+      font-size: 25px;
+    }
+    .marker-symbol > span {
+      transform: rotate(45deg);
+      line-height: 1;
+    }
     .price-badge {
       position: absolute;
       right: -10px;
@@ -508,6 +513,63 @@
     .price-badge.price-p5k { background: linear-gradient(135deg, #ffe8f0 0%, #ffd3e2 100%); }
     .price-badge.price-p10k { background: linear-gradient(135deg, #ffe9e6 0%, #ffd2cd 100%); }
     .price-badge.price-p10kplus { background: linear-gradient(135deg, #ffe2e2 0%, #ffc7c7 100%); }
+    .popup-card { min-width: 210px; color: #111827; }
+    .popup-title { margin-bottom: 5px; font-size: 15px; font-weight: 800; }
+    .popup-meta { margin-bottom: 4px; color: #475569; font-size: 12px; }
+    .popup-source a { color: #b42318; font-weight: 700; }
+    .popup-status {
+      display: inline-flex;
+      align-items: center;
+      margin: 2px 0 7px;
+      padding: 4px 7px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+    }
+    .popup-status--legacy {
+      border: 1px solid #f59e0b;
+      background: #fffbeb;
+      color: #92400e;
+    }
+    .popup-status--mixed {
+      border: 1px solid #f59e0b;
+      background: #fff7ed;
+      color: #9a3412;
+    }
+    .popup-note {
+      margin-top: 7px;
+      padding: 7px 8px;
+      border-radius: 7px;
+      background: #fff7ed;
+      color: #7c2d12;
+      font-size: 11px;
+      line-height: 1.5;
+    }
+    .popup-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .popup-action {
+      display: inline-flex;
+      align-items: center;
+      padding: 9px 11px;
+      border-radius: 9px;
+      background: #0f172a;
+      color: #f8fafc;
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .popup-action--primary { background: var(--accent); color: #0f172a; }
+    .data-credit { margin: 0; color: var(--muted); font-size: 12px; }
+    .data-notice {
+      margin: 12px 0 0;
+      padding: 11px 12px;
+      border: 1px solid rgba(245, 158, 11, 0.45);
+      border-radius: 10px;
+      background: rgba(120, 53, 15, 0.24);
+      color: #fde68a;
+      font-size: 13px;
+      line-height: 1.65;
+    }
+    .data-notice strong { color: #fef3c7; }
     a { color: var(--accent); }
   </style>
 </head>
@@ -515,6 +577,7 @@
   <div id="app">
     <header>
       <button id="filter-toggle" class="filter-toggle" type="button">フィルタを表示</button>
+      <a id="legacy-map-badge" class="map-data-status" href="#data-details" aria-live="polite" hidden>未検証の店舗行を含みます</a>
       <div id="filter-panel" class="filter-panel">
         <div class="controls">
           <div id="genre-chips" class="genre-chips"></div>
@@ -544,12 +607,18 @@
       </div>
 
       <div class="lp-grid">
-        <div class="lp-card">
+        <div class="lp-card" id="data-details">
           <h2>このマップについて</h2>
           <div class="meta-row">
-            <div class="pill">最終更新: <span id="updated-secondary">-</span></div>
+            <div class="pill">CSV生成: <span id="updated-secondary">-</span></div>
             <div class="pill">件数: <span id="count-secondary">-</span></div>
+            <div class="pill" id="legacy-verified-pill" hidden>未検証行の最終確認・記録日（最新）: <span id="legacy-verified-secondary">-</span></div>
           </div>
+          <div class="data-notice" id="legacy-data-notice" hidden>
+            <strong>未検証の店舗行: <span id="legacy-count-secondary">0 件</span></strong><br>
+            過去のスナップショットから保持した参考情報で、現在の営業状況や内容を再確認していません。来店前に店舗の公式情報または店舗へ直接ご確認ください。
+          </div>
+          <p class="data-notice">現行データの取得元はホットペッパーグルメ Webサービスです。旧データは未検証として表示し、旧ローカルデータだけの行には外部店舗ページを表示しません。本サイトは、データ提供元やリンク先の公式または提携サービスではありません。</p>
           <ul>
             <li>営業時間・住所・閉店情報は変わる場合があります。来店前に公式情報をご確認ください。</li>
             <li>位置情報はブラウザ内でのみ使用し、サーバーには送信しません。</li>
@@ -559,15 +628,9 @@
 
       <div class="lp-grid">
         <div class="lp-card">
-          <h3>広告枠（準備中）</h3>
-          <div class="ad-slot">AdSense 審査後に差し替え予定</div>
-          <p>上部ヘッダーや本文内に広告を配置する想定です。審査通過後にコードをここへ挿入してください。</p>
-        </div>
-        <div class="lp-card">
-          <h3>開発者を支援する</h3>
-          <p>マップが役に立ったら、コーヒー1杯分のサポートをお願いします。</p>
-          <a id="support-link" class="support-button" href="https://buymeacoffee.com/yourname" target="_blank" rel="noopener">BuyMeACoffee で支援</a>
-          <div style="margin-top:8px; color: var(--muted); font-size: 13px;">※ yourname を実アカウントに差し替えてください</div>
+          <h3>掲載情報の修正・ご意見</h3>
+          <p>閉店・住所違い・表示不具合などを見つけた場合は、GitHub Issues からお知らせください。公開投稿のため個人情報は記載しないでください。</p>
+          <a class="support-button" href="https://github.com/bboysakamotofuyumi-afk/meat_map/issues" target="_blank" rel="noopener noreferrer">GitHub Issues を開く</a>
         </div>
         <div class="lp-card">
           <h3>シェアする</h3>
@@ -583,7 +646,8 @@
         <a href="privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a>
         <a href="terms.html" target="_blank" rel="noopener">利用規約 / 免責</a>
         <a href="concept.html" target="_blank" rel="noopener">サイト概要・コンセプト</a>
-        <a href="https://github.com/genkishimura2000/meat_map/issues" target="_blank" rel="noopener">GitHub Issues</a>
+        <a href="https://github.com/bboysakamotofuyumi-afk/meat_map/issues" target="_blank" rel="noopener noreferrer">GitHub Issues</a>
+        <p class="data-credit">Powered by <a href="https://webservice.recruit.co.jp/" target="_blank" rel="noopener noreferrer">ホットペッパーグルメ Webサービス</a></p>
       </div>
     </div>
   </section>
@@ -597,19 +661,21 @@
         navigator.serviceWorker.register("./sw.js").catch(err => console.warn("sw register failed", err));
       });
     }
-    // サイト設定（必要に応じて書き換え）
-    const siteConfig = {
-      supportUrl: "https://buymeacoffee.com/yourname", // 実アカウントに差し替えてください
-      contactEmail: "", // 例: "contact@example.com"。空なら GitHub Issues を優先
-      gaMeasurementId: "", // 例: "G-XXXXXXX"。空なら GA 送信しない
-    };
-
     const params = new URLSearchParams(location.search);
-    const rawCsv = params.get("csv") || "/output/meatmap.csv";
-    // 解釈ルール: 絶対URL/ルート始まりはそのまま。相対パスはルートに付ける。
-    let csvUrl = rawCsv;
-    if (!/^https?:\/\//i.test(rawCsv) && !rawCsv.startsWith("/")) {
-      csvUrl = `/${rawCsv.replace(/^\.?\//, "")}`;
+    const docsRoot = new URL("./", location.href);
+    const defaultCsvUrl = new URL("./output/meatmap.csv", docsRoot);
+    let csvUrl = defaultCsvUrl.href;
+    const requestedCsv = params.get("csv");
+    if (requestedCsv) {
+      try {
+        const candidate = new URL(requestedCsv, docsRoot);
+        const isLocalCsv = candidate.origin === location.origin &&
+          candidate.pathname.startsWith(docsRoot.pathname) &&
+          candidate.pathname.toLowerCase().endsWith(".csv");
+        if (isLocalCsv) csvUrl = candidate.href;
+      } catch (err) {
+        console.warn("invalid csv parameter", err);
+      }
     }
     const map = L.map("map", {
       center: [35.681236, 139.767125],
@@ -622,34 +688,36 @@
       detectRetina: true,
     }).addTo(map);
     const tokyoBounds = {
-      minLat: 35,
+      // 東京都の島しょ部（伊豆・小笠原）も含む概略範囲。
+      minLat: 24,
       maxLat: 36,
-      minLng: 139,
-      maxLng: 141,
+      minLng: 138,
+      maxLng: 154,
     };
     function inTokyoBounds(lat, lng) {
       return Number.isFinite(lat) && Number.isFinite(lng) &&
         lat >= tokyoBounds.minLat && lat <= tokyoBounds.maxLat &&
         lng >= tokyoBounds.minLng && lng <= tokyoBounds.maxLng;
     }
+    const genreSymbols = Object.freeze({
+      "焼肉": "🔥",
+      "ステーキ": "🥩",
+      "シュラスコ": "🍖",
+      "焼き鳥・もつ焼き": "🍢",
+      "しゃぶしゃぶ": "🍲",
+      "韓国": "🌶️",
+      "その他": "🍽️",
+    });
     const cluster = L.markerClusterGroup({
       chunkedLoading: true,
       spiderfyOnMaxZoom: true,
       iconCreateFunction: (cl) => {
         const count = cl.getChildCount();
-        const isAllGenreSelected = typeof activeGenre === "string" && activeGenre === "";
-        let iconUrl = "./assets/pins/cluster.png";
-        if (isAllGenreSelected) {
-          iconUrl = "./assets/new_pins/processed/meats.png";
-        }
-        if (typeof activeGenre === "string" && activeGenre && typeof genreIcons === "object") {
-          const candidate = genreIcons[activeGenre];
-          if (candidate) {
-            iconUrl = candidate;
-          }
-        }
+        const symbol = (typeof activeGenre === "string" && activeGenre && typeof genreSymbols === "object")
+          ? (genreSymbols[activeGenre] || "🥩")
+          : "🥩";
         return L.divIcon({
-          html: `<div class="cluster-icon"><img src="${iconUrl}" alt="cluster"/><span class="cluster-icon-count">${count}</span></div>`,
+          html: `<div class="cluster-icon"><span class="cluster-icon-symbol" aria-hidden="true">${symbol}</span><span class="cluster-icon-count">${count}</span></div>`,
           className: "",
           iconSize: [64, 64],
         });
@@ -675,35 +743,21 @@
     const geocodeInput = document.getElementById("geocode-input");
     const searchSuggestions = document.getElementById("search-suggestions");
     const updatedSecondary = document.getElementById("updated-secondary");
-      const countSecondary = document.getElementById("count-secondary");
-      const shareX = document.getElementById("share-x");
-      const shareFb = document.getElementById("share-fb");
-      const supportLink = document.getElementById("support-link");
-      const contactLink = document.getElementById("contact-link");
+    const countSecondary = document.getElementById("count-secondary");
+    const legacyVerifiedPill = document.getElementById("legacy-verified-pill");
+    const legacyVerifiedSecondary = document.getElementById("legacy-verified-secondary");
+    const legacyDataNotice = document.getElementById("legacy-data-notice");
+    const legacyCountSecondary = document.getElementById("legacy-count-secondary");
+    const legacyMapBadge = document.getElementById("legacy-map-badge");
+    const shareX = document.getElementById("share-x");
+    const shareFb = document.getElementById("share-fb");
+    let currentCsvMetadata = {};
     let activeGenre = "";
     let userMarker = null;
     let userCircle = null;
     let geocodeMarker = null;
     const shareUrl = location.href.split("#")[0];
     const shareText = "MEAT MAP - 東京都の肉料理店マップ";
-    const trackEvent = (name, params) => {
-      if (!window.gtag) return;
-      window.gtag("event", name, params || {});
-    };
-    const initGA = (id) => {
-      if (!id) return;
-      const gtagScript = document.createElement("script");
-      gtagScript.async = true;
-      gtagScript.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(id)}`;
-      document.head.appendChild(gtagScript);
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){ dataLayer.push(arguments); }
-      window.gtag = gtag;
-      gtag("js", new Date());
-      gtag("config", id);
-    };
-    initGA(siteConfig.gaMeasurementId);
-
     if (filterToggle && filterPanel) {
       filterToggle.addEventListener("click", () => {
         const isOpen = filterPanel.classList.toggle("is-open");
@@ -713,21 +767,9 @@
 
     if (shareX) {
       shareX.href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
-      shareX.addEventListener("click", () => trackEvent("share", { method: "x", location: "lp" }));
     }
     if (shareFb) {
       shareFb.href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
-      shareFb.addEventListener("click", () => trackEvent("share", { method: "facebook", location: "lp" }));
-    }
-    if (supportLink && siteConfig.supportUrl) {
-      supportLink.href = siteConfig.supportUrl;
-      supportLink.addEventListener("click", () => trackEvent("support_click", { location: "lp" }));
-    }
-    if (contactLink) {
-      if (siteConfig.contactEmail) {
-        contactLink.href = `mailto:${siteConfig.contactEmail}`;
-        contactLink.textContent = siteConfig.contactEmail;
-      }
     }
 
     function showToast(msg) {
@@ -807,7 +849,7 @@
       currentSuggestions = [];
       if (!q) {
         searchSuggestions.style.display = "none";
-        searchSuggestions.innerHTML = "";
+        searchSuggestions.replaceChildren();
         return;
       }
       const results = [];
@@ -824,45 +866,48 @@
       currentSuggestions = results;
       if (!results.length) {
         searchSuggestions.style.display = "none";
-        searchSuggestions.innerHTML = "";
+        searchSuggestions.replaceChildren();
         return;
       }
-      searchSuggestions.innerHTML = results
-        .map(item => `<div class="search-suggestion">
-            <div class="search-suggestion-name">${item.name || "(名称不明)"}</div>
-            <div class="search-suggestion-meta">${item.address || ""}</div>
-          </div>`)
-        .join("");
-      Array.from(searchSuggestions.querySelectorAll(".search-suggestion")).forEach((el, idx) => {
-        el.addEventListener("click", () => {
+      const suggestionNodes = results.map((item, idx) => {
+        const el = document.createElement("div");
+        el.className = "search-suggestion";
+        el.setAttribute("role", "button");
+        el.tabIndex = 0;
+        const name = document.createElement("div");
+        name.className = "search-suggestion-name";
+        name.textContent = item.name || "(名称不明)";
+        const meta = document.createElement("div");
+        meta.className = "search-suggestion-meta";
+        meta.textContent = item.address || "";
+        el.append(name, meta);
+        const selectSuggestion = () => {
           const picked = results[idx];
           searchSuggestions.style.display = "none";
-          searchSuggestions.innerHTML = "";
-          if (picked && picked.marker) {
-            focusOnMarker(picked.marker);
-            trackEvent("search_select", { source: "suggestion" });
+          searchSuggestions.replaceChildren();
+          if (picked && picked.marker) focusOnMarker(picked.marker);
+        };
+        el.addEventListener("click", () => {
+          selectSuggestion();
+        });
+        el.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            selectSuggestion();
           }
         });
+        return el;
       });
+      searchSuggestions.replaceChildren(...suggestionNodes);
       searchSuggestions.style.display = "block";
     }
 
     function clearSuggestions() {
       if (!searchSuggestions) return;
       searchSuggestions.style.display = "none";
-      searchSuggestions.innerHTML = "";
+      searchSuggestions.replaceChildren();
       currentSuggestions = [];
     }
-
-    const genreIcons = {
-      "焼肉": "./assets/new_pins/processed/yakiniku.png",
-      "ステーキ": "./assets/new_pins/processed/steak.png",
-      "シュラスコ": "./assets/new_pins/processed/syurasuko.png",
-      "焼き鳥・もつ焼き": "./assets/new_pins/processed/yakitori.png",
-      "しゃぶしゃぶ": "./assets/new_pins/processed/syabusyabu.png",
-      "韓国": "./assets/new_pins/processed/kankoku.png",
-      "その他": "./assets/new_pins/processed/others.png",
-    };
 
     function priceBadgeTier(avgPrice) {
       if (!Number.isFinite(avgPrice) || avgPrice == null) return null;
@@ -898,26 +943,18 @@
       if (/韓国/.test(g)) return "韓国";
       if (/中華/.test(g)) return "その他";
       // 上記以外は認識外ジャンルとして「その他」に倒す
-      return genreIcons[g] ? g : "その他";
+      return genreSymbols[g] ? g : "その他";
     }
 
     function iconForRow(row, priceInfo) {
       const genreText = normalizeGenreText(row.genre || "");
-      const iconUrl = genreIcons[genreText] || genreIcons["その他"];
+      const symbol = genreSymbols[genreText] || genreSymbols["その他"];
       const baseSize = [48, 48];
       const badgeTier = priceBadgeTier(priceInfo && priceInfo.avgDinnerPrice);
-      if (!badgeTier) {
-        return L.icon({
-          iconUrl,
-          iconSize: baseSize,
-          iconAnchor: [24, 44],
-          popupAnchor: [0, -36],
-        });
-      }
       const badgeHtml = priceBadgeHtml(badgeTier);
       const html = `
         <div class="marker-with-badge" style="width:${baseSize[0]}px; height:${baseSize[1]}px;">
-          <img src="${iconUrl}" style="width:100%;height:100%;display:block;" alt="marker">
+          <div class="marker-symbol"><span aria-hidden="true">${symbol}</span></div>
           ${badgeHtml}
         </div>
       `;
@@ -930,29 +967,226 @@
       });
     }
 
+    function safeHttpUrl(value) {
+      if (!value) return null;
+      try {
+        const parsed = new URL(String(value), location.href);
+        return parsed.protocol === "https:" || parsed.protocol === "http:" ? parsed.href : null;
+      } catch (err) {
+        return null;
+      }
+    }
+
+    const dataDefinitions = Object.freeze({
+      hotpepper: {
+        label: "ホットペッパーグルメ",
+        homepage: "https://www.hotpepper.jp/",
+        domains: ["hotpepper.jp"],
+        rowUrlFields: ["hotpepper_url"],
+      },
+      legacy_local: {
+        label: "旧ローカルデータ",
+        homepage: null,
+        domains: [],
+        rowUrlFields: [],
+      },
+    });
+
+    function normalizeSources(value) {
+      const seen = new Set();
+      return String(value || "")
+        .split(/[,|;]/)
+        .map(item => item.trim().toLowerCase())
+        .filter(item => item && !seen.has(item) && seen.add(item));
+    }
+
+    function hasLegacyLocal(row) {
+      return Boolean(String(row.legacy_id || "").trim())
+        || normalizeSources(row.sources).includes("legacy_local");
+    }
+
+    function isLegacyUnverified(row) {
+      const status = String(row.data_status || row.verification_status || "").trim().toLowerCase();
+      if (status === "legacy_unverified") return true;
+      const legacyFlag = String(row.legacy_unverified || "").trim().toLowerCase();
+      if (["1", "true", "yes"].includes(legacyFlag)) return true;
+      const sources = normalizeSources(row.sources);
+      return !status && hasLegacyLocal(row) && !sources.includes("hotpepper");
+    }
+
+    function displayDate(value) {
+      const match = String(value || "").trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (!match) return "";
+      const year = Number(match[1]);
+      const month = Number(match[2]);
+      const day = Number(match[3]);
+      const parsed = new Date(Date.UTC(year, month - 1, day));
+      if (parsed.getUTCFullYear() !== year || parsed.getUTCMonth() !== month - 1 || parsed.getUTCDate() !== day) {
+        return "";
+      }
+      return `${match[1]}-${match[2]}-${match[3]}`;
+    }
+
+    function rowLastVerifiedDate(row) {
+      const rowDate = displayDate(row.last_verified_at || row.verified_at || row.acquired_at);
+      if (rowDate) return rowDate;
+      if (isLegacyUnverified(row)) {
+        return displayDate(
+          currentCsvMetadata.legacy_snapshot_at || currentCsvMetadata.legacy_last_verified_at
+        );
+      }
+      return displayDate(currentCsvMetadata.generated_at_utc);
+    }
+
+    function dataRowUrl(row, sourceKey) {
+      const definition = dataDefinitions[sourceKey];
+      if (!definition) return null;
+      const candidates = definition.rowUrlFields.map(field => row[field]);
+      candidates.push(row.source_url, row.url);
+      for (const candidate of candidates) {
+        const safeUrl = safeHttpUrl(candidate);
+        if (!safeUrl) continue;
+        const hostname = new URL(safeUrl).hostname.toLowerCase();
+        const allowed = definition.domains.some(domain => hostname === domain || hostname.endsWith(`.${domain}`));
+        if (allowed) return safeUrl;
+      }
+      return null;
+    }
+
+    function dataUrlForRow(row, sourceKey) {
+      const definition = dataDefinitions[sourceKey];
+      if (!definition) return null;
+      return dataRowUrl(row, sourceKey) || definition.homepage;
+    }
+
+    function appendSourceMeta(container, row) {
+      const sources = normalizeSources(row.sources);
+      if (!sources.length && !hasLegacyLocal(row)) return;
+      if (sources.includes("hotpepper")) {
+        const definition = dataDefinitions.hotpepper;
+        const sourceUrl = dataUrlForRow(row, "hotpepper");
+        const sourceMeta = document.createElement("div");
+        sourceMeta.className = "popup-meta popup-source";
+        sourceMeta.appendChild(document.createTextNode("取得元: "));
+        if (sourceUrl) {
+          const link = document.createElement("a");
+          link.href = sourceUrl;
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+          link.textContent = definition.label;
+          sourceMeta.appendChild(link);
+        } else {
+          sourceMeta.appendChild(document.createTextNode(definition.label));
+        }
+        container.appendChild(sourceMeta);
+      }
+      if (sources.includes("legacy_local") || hasLegacyLocal(row)) {
+        appendPopupMeta(container, "データ区分: 旧ローカルデータ");
+      }
+    }
+
+    function appendDataStatus(container, row) {
+      const legacy = isLegacyUnverified(row);
+      const legacyLocal = hasLegacyLocal(row);
+      const hasLegacyComponent = !legacy && legacyLocal;
+      if (legacy) {
+        const status = document.createElement("div");
+        status.className = "popup-status popup-status--legacy";
+        status.textContent = legacyLocal ? "旧ローカルデータ（未検証）" : "旧データ（未検証）";
+        container.appendChild(status);
+      } else if (hasLegacyComponent) {
+        const status = document.createElement("div");
+        status.className = "popup-status popup-status--mixed";
+        status.textContent = "現行データ + 旧ローカルデータ";
+        container.appendChild(status);
+      }
+      const verifiedDate = rowLastVerifiedDate(row);
+      appendPopupMeta(
+        container,
+        `${legacy ? "最終確認・記録日" : "取得 / 最終確認日"}: ${verifiedDate || "不明"}`
+      );
+      if (hasLegacyComponent) {
+        const legacySnapshot = displayDate(
+          currentCsvMetadata.legacy_snapshot_at || currentCsvMetadata.legacy_last_verified_at
+        );
+        appendPopupMeta(container, `旧ローカルデータのスナップショット: ${legacySnapshot || "不明"}`);
+      }
+      if (legacy) {
+        const note = document.createElement("div");
+        note.className = "popup-note";
+        note.textContent = "現在の営業状況や内容は未確認です。来店前に店舗の公式情報または店舗へ直接ご確認ください。";
+        container.appendChild(note);
+      } else if (hasLegacyComponent) {
+        const note = document.createElement("div");
+        note.className = "popup-note";
+        note.textContent = "旧ローカルデータ部分は旧スナップショット以降、再確認していません。来店前に店舗の公式情報または店舗へ直接ご確認ください。";
+        container.appendChild(note);
+      }
+    }
+
+    function updateLegacyDisclosure(rows) {
+      const legacyRows = rows.filter(isLegacyUnverified);
+      const hasLegacy = legacyRows.length > 0;
+      if (legacyDataNotice) legacyDataNotice.hidden = !hasLegacy;
+      if (legacyVerifiedPill) legacyVerifiedPill.hidden = !hasLegacy;
+      if (legacyMapBadge) legacyMapBadge.hidden = !hasLegacy;
+      if (!hasLegacy) return;
+      const legacyCount = legacyRows.length.toLocaleString("ja-JP");
+      if (legacyCountSecondary) legacyCountSecondary.textContent = `${legacyCount} 件`;
+      if (legacyMapBadge) legacyMapBadge.textContent = `未検証の店舗行 ${legacyCount} 件（注意を確認）`;
+      const dates = legacyRows.map(rowLastVerifiedDate).filter(Boolean).sort();
+      const latestDate = dates.length ? dates[dates.length - 1] : "不明";
+      if (legacyVerifiedSecondary) legacyVerifiedSecondary.textContent = latestDate;
+    }
+
+    function appendPopupMeta(container, value) {
+      if (!value) return;
+      const meta = document.createElement("div");
+      meta.className = "popup-meta";
+      meta.textContent = value;
+      container.appendChild(meta);
+    }
+
+    function createPopupAction(label, href, primary = false) {
+      const link = document.createElement("a");
+      link.className = `popup-action${primary ? " popup-action--primary" : ""}`;
+      link.href = href;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = label;
+      return link;
+    }
+
     function createPopup(row, priceInfo) {
-      const urlButton = row.url
-        ? `<a href="${row.url}" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; gap:6px; padding:10px 12px; background:var(--accent); color:#0f172a; border-radius:10px; text-decoration:none; font-weight:800;">店舗ページ</a>`
-        : "";
+      const root = document.createElement("div");
+      root.className = "popup-card";
+      const title = document.createElement("div");
+      title.className = "popup-title";
+      title.textContent = row.name || "名称不明";
+      root.appendChild(title);
+      appendPopupMeta(root, row.genre || "");
+      appendPopupMeta(root, row.address || "");
+      if (Number.isFinite(priceInfo && priceInfo.avgDinnerPrice)) {
+        appendPopupMeta(root, `予算目安: ¥${Math.round(priceInfo.avgDinnerPrice).toLocaleString("ja-JP")}`);
+      }
+      appendSourceMeta(root, row);
+      appendDataStatus(root, row);
+
+      const actions = document.createElement("div");
+      actions.className = "popup-actions";
+      const shopUrl = normalizeSources(row.sources).includes("hotpepper")
+        ? dataRowUrl(row, "hotpepper")
+        : null;
+      if (shopUrl) actions.appendChild(createPopupAction("店舗ページ", shopUrl, true));
       const lat = parseFloat(row.lat);
       const lng = parseFloat(row.lng);
-      let mapsButtons = "";
       if (Number.isFinite(lat) && Number.isFinite(lng)) {
         const dest = `${lat},${lng}`;
         const dirUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest)}`;
-        mapsButtons = `
-          <a href="${dirUrl}" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; padding:10px 12px; border-radius:10px; background:rgba(15,23,42,0.9); color:#e2e8f0; font-size:12px; text-decoration:none; font-weight:700;">経路検索</a>
-        `;
+        actions.appendChild(createPopupAction("経路検索", dirUrl));
       }
-      return `
-        <div style="min-width: 180px;">
-          <div style="font-weight:800; margin-bottom:10px; color:var(--text);">${row.name || "名称不明"}</div>
-          <div style="margin-top:8px; display:flex; flex-wrap:wrap; gap:8px;">
-            ${urlButton || ""}
-            ${mapsButtons}
-          </div>
-        </div>
-      `;
+      if (actions.childElementCount) root.appendChild(actions);
+      return root;
     }
 
     function scheduleApplyFilterAfterGeocode() {
@@ -1069,28 +1303,9 @@
     async function loadCsv() {
       showToast("CSV を読み込み中…");
       try {
-        const candidateUrls = [];
-        const bustParam = `_ts=${Date.now()}`;
-        const withBust = (url) => `${url}${url.includes("?") ? "&" : "?"}${bustParam}`;
-        if (/^https?:\/\//i.test(csvUrl)) {
-          candidateUrls.push(withBust(csvUrl));
-          candidateUrls.push(csvUrl);
-        } else {
-          const abs = csvUrl; // 例: /output/...
-          const rel = csvUrl.replace(/^\//, "./"); // 例: output/...
-          candidateUrls.push(withBust(abs));
-          candidateUrls.push(withBust(rel));
-          candidateUrls.push(abs);
-          candidateUrls.push(rel);
-        }
-        let text = null;
-        for (const url of candidateUrls) {
-          const res = await fetch(url, { cache: "no-store" });
-          if (!res.ok) continue;
-          text = await res.text();
-          break;
-        }
-        if (!text) throw new Error("CSV fetch failed");
+        const response = await fetch(csvUrl, { cache: "no-store", credentials: "same-origin" });
+        if (!response.ok) throw new Error(`CSV fetch failed: ${response.status}`);
+        const text = await response.text();
         const meta = {};
         text.split(/\r?\n/).forEach(line => {
           if (line.startsWith("#")) {
@@ -1099,9 +1314,10 @@
             if (k && v !== undefined) meta[k.trim()] = v.trim();
           }
         });
+        currentCsvMetadata = meta;
         if (meta.generated_at_utc) {
           if (updatedSecondary) {
-            updatedSecondary.textContent = meta.generated_at_utc;
+            updatedSecondary.textContent = displayDate(meta.generated_at_utc) || "不明";
           }
         }
         const result = Papa.parse(text, {
@@ -1147,6 +1363,7 @@
             geocodeQueue.push(row);
           }
         });
+        updateLegacyDisclosure(rows);
         if (countSecondary) {
           countSecondary.textContent = `${added} 件`;
         }
@@ -1175,7 +1392,6 @@
           clearSuggestions();
           if (picked && picked.marker) {
             focusOnMarker(picked.marker);
-            trackEvent("search_select", { source: "enter" });
           }
         }
       }
@@ -1226,9 +1442,9 @@
     function populateGenreChipsFromCounts(genreCounts) {
       if (!genreChips) return;
       const allowedGenres = ["焼肉", "ステーキ", "シュラスコ", "焼き鳥・もつ焼き", "しゃぶしゃぶ", "韓国", "その他"];
-      genreChips.innerHTML = "";
+      genreChips.replaceChildren();
 
-      const createChip = (genreKey, label, iconUrl) => {
+      const createChip = (genreKey, label, symbol) => {
         const chip = document.createElement("button");
         chip.type = "button";
         chip.className = "genre-chip";
@@ -1237,14 +1453,15 @@
         if (!genreKey) {
           displayLabel = "All";
         }
-        const showText = !genreKey && !iconUrl;
-        if (iconUrl) {
-          const img = document.createElement("img");
-          img.src = iconUrl;
-          img.alt = displayLabel;
-          chip.appendChild(img);
+        const showText = !symbol;
+        if (symbol) {
+          const icon = document.createElement("span");
+          icon.className = "genre-chip-symbol";
+          icon.setAttribute("aria-hidden", "true");
+          icon.textContent = symbol;
+          chip.appendChild(icon);
         }
-        if (!showText && iconUrl) {
+        if (!showText) {
           chip.classList.add("genre-chip--icon-only");
         }
         if (displayLabel === "その他" || genreKey === "その他") {
@@ -1273,11 +1490,10 @@
       };
 
       // 「All」チップ（全ジャンル）
-      createChip("", "All", "./assets/new_pins/processed/meats.png");
+      createChip("", "All", "🥩");
 
       allowedGenres.forEach((name) => {
-        const iconUrl = genreIcons[name] || null;
-        createChip(name, name, iconUrl);
+        createChip(name, name, genreSymbols[name] || "🍽️");
       });
     }
 

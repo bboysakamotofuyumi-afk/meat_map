@@ -38,10 +38,12 @@ def export_to_csv(
     output_path.parent.mkdir(parents=True, exist_ok=True)
     filtered = [record for record in records if not include_ranks or record.carnivore_rank in include_ranks]
     with output_path.open("w", newline="", encoding=encoding) as fh:
-        writer = csv.DictWriter(fh, fieldnames=DEFAULT_FIELDS)
+        writer = csv.DictWriter(fh, fieldnames=DEFAULT_FIELDS, lineterminator="\n")
         # メタ情報をコメント行として付与（Google My Maps はヘッダー以外を無視するので上部に置く）
         timestamp = datetime.now(timezone.utc).isoformat()
+        source_scope = ",".join(sorted({source for record in filtered for source in record.sources}))
         fh.write(f"# generated_at_utc={timestamp}\n")
+        fh.write(f"# source_scope={source_scope}\n")
         fh.write(f"# total_records={len(filtered)}\n")
         writer.writeheader()
         for record in filtered:

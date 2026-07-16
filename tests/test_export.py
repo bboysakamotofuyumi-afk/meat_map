@@ -32,5 +32,7 @@ def test_export_filters_rank(tmp_path):
     output = tmp_path / "meatmap.csv"
     export.export_to_csv(records, output, include_ranks=("S",))
     text = output.read_text(encoding="utf-8")
+    assert b"\r\n" not in output.read_bytes()
+    assert "# source_scope=hotpepper" in text
     assert "店s1" in text
     assert "店b1" not in text

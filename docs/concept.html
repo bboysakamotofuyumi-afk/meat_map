@@ -49,26 +49,29 @@
     <section>
       <h2>データソースと更新</h2>
       <ul>
-        <li>主な取得元: ホットペッパーグルメ API（肉ジャンル＋キーワード検索）</li>
-        <li>CSV: `docs/output/meatmap.csv` を Pages で配信。<code>?csv=output/meatmap.csv</code> で指定可</li>
-        <li>更新方法: `python -m meatmap.cli --output output/meatmap.csv --copy-to-docs` をネットワーク有効な環境で実行</li>
+        <li>現行データ取得元: ホットペッパーグルメ Webサービス（肉ジャンル＋キーワード検索）</li>
+        <li>旧データ区分: 過去にローカルで保有していた店舗情報を「旧ローカルデータ（未検証）」と明示して掲載します。一次取得元は現リポジトリの履歴からは特定できません。</li>
+        <li>現行APIで確認できなくなった旧Hot Pepper行も「旧データ（未検証）」として保持します。</li>
+        <li>公開CSV: <code>docs/output/meatmap.csv</code></li>
+        <li>現行APIデータの更新方法: <code>make csv</code> をネットワーク有効な環境で実行</li>
+        <li>CSV生成日と、店舗情報の取得・最終確認日または記録日、および確認状態をマップ内に表示します。</li>
       </ul>
+      <p>Powered by <a href="https://webservice.recruit.co.jp/" target="_blank" rel="noopener noreferrer">ホットペッパーグルメ Webサービス</a></p>
+      <div class="box">
+        <strong>データの確認状態について</strong>
+        <p>現行APIで確認できない「旧データ（未検証）」は、表示された最終確認・記録日以降の営業状況、住所、価格等を再確認していない参考情報です。旧ローカルデータだけの行には外部店舗ページへのリンクを表示しません。本サイトは、データ提供元やリンク先の公式または提携サービスではありません。</p>
+      </div>
     </section>
 
     <section>
-      <h2>広告・収益化方針</h2>
-      <ul>
-        <li>現在: 広告コードは未設置。寄付ボタンのみ（Ko-fi/BMC想定）。</li>
-        <li>予定: AdSense 審査通過後、本文/サイド/フッターに広告枠を設置予定。</li>
-        <li>収益目安: 月3,000〜5,000 PVで数百〜1,000円程度を想定（RPM/CTRに依存）。寄付は1〜2ヶ月に1回、500〜1,000円程度を目標。</li>
-      </ul>
-      <div class="box">広告導入時はプライバシーポリシーを更新し、必要に応じて同意取得を行います。</div>
+      <h2>広告・計測方針</h2>
+      <p>現在、広告配信・寄付受付・アクセス解析は行っていません。導入する場合は、利用者への案内と関連ポリシーの更新を先に行います。</p>
     </section>
 
     <section>
       <h2>免責</h2>
       <ul>
-        <li>掲載情報の正確性・最新性は保証しません。来店前に公式情報を確認してください。</li>
+        <li>掲載情報の正確性・最新性は保証しません。来店前に店舗の公式情報または店舗へ直接確認してください。</li>
         <li>位置情報はブラウザ内でのみ使用し、サーバーへ送信しません。</li>
       </ul>
       <p>詳細は <a href="terms.html">利用規約 / 免責</a> および <a href="privacy.html">プライバシーポリシー</a> を参照してください。</p>
@@ -77,7 +80,7 @@
     <section>
       <h2>運営・問い合わせ</h2>
       <p>運営: TOKYO MEAT MAP（個人開発）</p>
-      <p>問い合わせ: <a href="https://github.com/genkishimura2000/meat_map/issues" target="_blank" rel="noopener">GitHub Issues</a> / メール（必要なら <code>mailto:</code> を追記）</p>
+      <p>掲載情報の修正依頼・不具合報告・ご意見: <a href="https://github.com/bboysakamotofuyumi-afk/meat_map/issues" target="_blank" rel="noopener noreferrer">GitHub Issues</a>（公開投稿のため個人情報は記載しないでください）</p>
     </section>
   </main>
 </body>
